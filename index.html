@@ -61,8 +61,20 @@
       <span id="roleTag" class="pill">Khách xem key</span>
       <span id="ctvTag" class="pill ctv" style="display:none;">CTV</span>
       <button id="btnOpenAuth" class="green small" onclick="toggleAuth()">Đăng nhập</button>
+      <button id="btnChangePass" class="dark small" style="display:none;" onclick="toggleChangePassBox()">Đổi MK</button>
       <button id="btnLogout" class="dark small" style="display:none;" onclick="logout()">Đăng xuất</button>
     </div>
+  </div>
+
+  <div id="changePassBox" class="card" style="display:none; border-color:#38bdf8;">
+    <h2 style="margin-bottom:8px; color:#38bdf8;">Đổi Mật Khẩu Tài Khoản</h2>
+    <input id="oldPassInp" type="password" placeholder="Nhập mật khẩu hiện tại..." />
+    <input id="newPassInp" type="password" placeholder="Nhập mật khẩu mới (>= 3 ký tự)..." />
+    <div class="row-2">
+      <button class="green" onclick="changePassword()">Xác nhận đổi MK</button>
+      <button class="dark" onclick="toggleChangePassBox()">Đóng</button>
+    </div>
+    <div id="changePassMsg" class="msg"></div>
   </div>
 
   <div id="authBox" class="card" style="display:none;">
@@ -189,7 +201,6 @@
   </div>
 
 </div>
-
 <script>
   const STORAGE_KEY = "shop_key_ctv_control_v1";
   let lastTakenPkgKeys = "";
@@ -265,6 +276,35 @@
     box.style.display = box.style.display === "none" ? "block" : "none";
   }
 
+  function toggleChangePassBox() {
+    if (!currentUser()) return;
+    const box = document.getElementById("changePassBox");
+    const nextVisible = box.style.display === "none";
+    box.style.display = nextVisible ? "block" : "none";
+    if (nextVisible) {
+      document.getElementById("oldPassInp").value = "";
+      document.getElementById("newPassInp").value = "";
+      const m = document.getElementById("changePassMsg");
+      m.className = "msg";
+      m.textContent = "";
+    }
+  }
+
+  function changePassword() {
+    const u = currentUser();
+    if (!u) return;
+    const oldPass = document.getElementById("oldPassInp").value;
+    const newPass = document.getElementById("newPassInp").value;
+    if (!oldPass) return showMsg("changePassMsg", false, "Vui lòng nhập mật khẩu hiện tại.");
+    if (u.password !== oldPass) return showMsg("changePassMsg", false, "Mật khẩu hiện tại không đúng.");
+    if (!newPass || newPass.length < 3) return showMsg("changePassMsg", false, "Mật khẩu mới phải từ 3 ký tự trở lên.");
+    u.password = newPass;
+    saveState();
+    document.getElementById("oldPassInp").value = "";
+    document.getElementById("newPassInp").value = "";
+    showMsg("changePassMsg", true, "Đổi mật khẩu thành công!");
+  }
+
   function register() {
     const name = document.getElementById("uName").value.trim().toLowerCase();
     const pass = document.getElementById("uPass").value;
@@ -291,6 +331,7 @@
 
   function logout() {
     state.currentUser = null;
+    document.getElementById("changePassBox").style.display = "none";
     saveState();
     render();
   }
@@ -607,7 +648,9 @@
     document.getElementById("roleTag").className = "pill" + (adminOk ? " admin" : "");
     document.getElementById("ctvTag").style.display = u && ctvOk ? "inline-block" : "none";
     document.getElementById("btnOpenAuth").style.display = u ? "none" : "inline-block";
+    document.getElementById("btnChangePass").style.display = u ? "inline-block" : "none";
     document.getElementById("btnLogout").style.display = u ? "inline-block" : "none";
+    if (!u) document.getElementById("changePassBox").style.display = "none";
     document.getElementById("adminPanel").style.display = adminOk ? "block" : "none";
 
     document.getElementById("ctvStockBadge").textContent = "Kho CTV: " + (state.ctvKeys || []).length + " key";
