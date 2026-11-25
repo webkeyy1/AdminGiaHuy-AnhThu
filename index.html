@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mua Kho Key CTV & Không CTV</title>
+  <title>Shop Key & Đơn Hàng</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
-    .wrap { max-width: 680px; margin: 0 auto; }
+    .wrap { max-width: 720px; margin: 0 auto; }
     .card { background: #131927; border: 1px solid #242e46; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
     h2 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 800; }
-    input, textarea, button { width: 100%; padding: 12px 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #2c3856; font-size: 15px; }
-    input, textarea { background: #0b101b; color: #f8fafc; }
+    input, textarea, select, button { width: 100%; padding: 11px 14px; margin: 7px 0; border-radius: 12px; border: 1px solid #2c3856; font-size: 14.5px; }
+    input, textarea, select { background: #0b101b; color: #f8fafc; }
     input::placeholder, textarea::placeholder { color: #8c9bb5; }
     button { background: #2563eb; color: #fff; font-weight: 700; border: none; cursor: pointer; }
     button:hover { opacity: 0.93; }
     button.green { background: #16a34a; }
+    button.pink { background: #e11d48; }
     button.amber { background: #d97706; }
     button.red { background: #dc2626; }
     button.dark { background: #1c2438; border: 1px solid #324063; color: #e2e8f0; }
     button.small { width: auto; padding: 6px 10px; font-size: 12px; margin: 0; border-radius: 9px; }
 
     .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .pill { display: inline-block; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
-    .pill.ctv { background: rgba(251, 191, 36, 0.14); color: #fbbf24; border-color: rgba(251, 191, 36, 0.38); }
+    .pill { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
+    .pill.admin { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
 
-    .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .calc-text { font-size: 14px; color: #cbd5e1; margin: 4px 0 10px; }
-    .calc-text b.blue { color: #38bdf8; }
-    .calc-text b.amber { color: #fbbf24; }
+    .calc-text b { color: #fb7185; }
 
     .item { background: #0b101b; border: 1px solid #222c44; border-radius: 12px; padding: 12px; margin-top: 10px; }
     .key-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #111726; border: 1px solid #25304b; border-radius: 9px; padding: 8px 10px; margin-top: 6px; }
@@ -38,7 +38,11 @@
     .msg.ok { display: block; background: #14532d; color: #dcfce7; }
     .msg.err { display: block; background: #7f1d1d; color: #fee2e2; }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    @media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; } }
+    .row-3 { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+    @media (max-width: 500px) {
+      .row-2 { grid-template-columns: 1fr; }
+      .row-3 { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -46,49 +50,45 @@
 
   <div class="card topbar">
     <div>
-      <div id="userLabel" style="font-weight:800; font-size:15px;">Khách (Chưa đăng nhập)</div>
+      <div id="userLabel" style="font-weight:800; font-size:15.5px;">Khách (Chưa đăng nhập)</div>
       <div style="font-size:13px; color:#94a3b8; margin-top:3px;">
         Số dư: <b id="balanceLabel" style="color:#4ade80;">0đ</b>
       </div>
     </div>
     <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <span id="roleTag" class="pill">Khách xem key</span>
       <button id="btnOpenAuth" class="green small" onclick="toggleAuth()">Đăng nhập</button>
       <button id="btnLogout" class="dark small" style="display:none;" onclick="logout()">Đăng xuất</button>
     </div>
   </div>
 
   <div id="authBox" class="card" style="display:none;">
-    <h2 style="margin-bottom:8px;">Đăng nhập tài khoản</h2>
-    <input id="uName" type="text" placeholder="Tên tài khoản (VD: admin hoặc khach1)" />
+    <h2 style="margin-bottom:8px;">Đăng nhập / Đăng ký</h2>
+    <input id="uName" type="text" placeholder="Tên tài khoản (VD: admingiahuy, adminanhthu, khach1)" />
     <input id="uPass" type="password" placeholder="Mật khẩu (123)" />
     <div class="row-2">
       <button onclick="login()">Đăng nhập</button>
       <button class="green" onclick="register()">Đăng ký</button>
     </div>
-    <div style="font-size:12px; color:#94a3b8;">Tài khoản <b>admin</b> (mật khẩu <b>123</b>) có quyền Admin.</div>
+    <div style="font-size:12px; color:#94a3b8;">
+      Tài khoản Admin có sẵn: <b>admingiahuy</b>, <b>adminanhthu</b> (mật khẩu <b>123</b>).
+    </div>
     <div id="authMsg" class="msg"></div>
   </div>
 
   <div class="card">
     <div class="head-row">
-      <h2>2. Mua Kho Không<br/>CTV (400đ/key)</h2>
-      <span id="nonCtvStockBadge" class="pill">Kho không CTV: 0 key</span>
+      <h2>Mua Key Theo Đơn Hàng</h2>
+      <span id="selectedStockBadge" class="pill">Kho: 0 key</span>
     </div>
-    <input id="nonCtvQty" type="number" min="1" placeholder="Nhập số lượng key không CTV..." oninput="updateCalc()" />
-    <div class="calc-text">Thành tiền: <b id="nonCtvMoney" class="blue">0đ</b></div>
-    <button class="green" onclick="buyPool('non_ctv')">Mua Kho Không CTV</button>
-    <div id="nonCtvMsg" class="msg"></div>
-  </div>
 
-  <div class="card" style="border-color:#d97706;">
-    <div class="head-row">
-      <h2>3. Mua Kho CTV<br/>(330đ/key)</h2>
-      <span id="ctvStockBadge" class="pill ctv">Kho CTV: 0 key</span>
-    </div>
-    <input id="ctvQty" type="number" min="1" placeholder="Nhập số lượng key CTV..." oninput="updateCalc()" />
-    <div class="calc-text">Thành tiền: <b id="ctvMoney" class="amber">0đ</b></div>
-    <button class="amber" onclick="buyPool('ctv')">Mua Kho CTV</button>
-    <div id="ctvMsg" class="msg"></div>
+    <div style="font-size:13px; color:#94a3b8;">Chọn đơn / mặt hàng:</div>
+    <select id="shopOrderSelect" onchange="updateShopCalc()"></select>
+
+    <input id="shopBuyQty" type="number" min="1" value="1" placeholder="Nhập số lượng key muốn mua..." oninput="updateShopCalc()" />
+    <div class="calc-text">Thành tiền: <b id="shopTotalMoney">0đ</b></div>
+    <button class="pink" onclick="buySelectedOrderItem()">Mua Key Ngay</button>
+    <div id="shopBuyMsg" class="msg"></div>
   </div>
 
   <div class="card">
@@ -96,15 +96,15 @@
     <div id="myOrdersBox" style="font-size:13.5px; color:#94a3b8;">Vui lòng đăng nhập để xem key đã mua.</div>
   </div>
 
-  <div id="adminPanel" class="card" style="display:none; border-color:#38bdf8;">
-    <h2 style="margin-bottom:10px; color:#38bdf8;">Quản Lý Admin (Chỉ Admin)</h2>
+  <div id="adminPanel" class="card" style="display:none; border-color:#fbbf24;">
+    <h2 style="margin-bottom:10px; color:#fbbf24;">Quyền Admin (Chỉ Admin Mới Dùng Được)</h2>
 
     <div class="item">
-      <div style="font-weight:700; margin-bottom:6px;">+ Số Dư & Xóa Số Dư Cho Người Khác</div>
+      <div style="font-weight:700; margin-bottom:6px;">1. Cộng Số Dư (+SD) & Xóa Số Dư Cho Người Khác</div>
       <input id="targetUser" type="text" placeholder="Tên tài khoản người nhận (VD: khach1)" />
-      <input id="addBalanceInput" type="number" placeholder="Số tiền cộng (VD: 50000)" />
+      <input id="balanceDelta" type="number" placeholder="Số tiền cộng (VD: 50000)" />
       <div class="row-2">
-        <button class="green" onclick="adminAddBalance()">+ Cộng số dư</button>
+        <button class="green" onclick="adminAddBalance()">+ Số dư (+SD)</button>
         <button class="red" onclick="adminClearBalance()">Xóa số dư (0đ)</button>
       </div>
       <div id="adminUsersList"></div>
@@ -112,55 +112,83 @@
     </div>
 
     <div class="item">
-      <div style="font-weight:700; margin-bottom:6px;">Nhập & Xóa Key Kho Không CTV</div>
-      <textarea id="importNonCtvArea" rows="2" placeholder="Nhập key không CTV (mỗi dòng 1 key)..."></textarea>
-      <button class="green" onclick="adminImportKeys('non_ctv')">Nhập Kho Không CTV</button>
-      <div id="adminNonCtvList"></div>
+      <div style="font-weight:700; margin-bottom:6px;">2. Tạo Đơn Hàng (Tên Hàng & Số Tiền) & Gỡ</div>
+      <input id="newOrderName" type="text" placeholder="Tên hàng / tên đơn (VD: Key 1 Ngày)" />
+      <input id="newOrderPrice" type="number" min="1" placeholder="Số tiền VNĐ (VD: 10000)" />
+      <button class="green" onclick="adminCreateOrderItem()">+ Tạo đơn hàng</button>
+
+      <div id="adminCreatedOrdersList"></div>
+      <div id="adminCreateMsg" class="msg"></div>
     </div>
 
     <div class="item">
-      <div style="font-weight:700; margin-bottom:6px;">Nhập & Xóa Key Kho CTV</div>
-      <textarea id="importCtvArea" rows="2" placeholder="Nhập key CTV (mỗi dòng 1 key)..."></textarea>
-      <button class="amber" onclick="adminImportKeys('ctv')">Nhập Kho CTV</button>
-      <div id="adminCtvList"></div>
+      <div style="font-weight:700; margin-bottom:6px;">3. Kho Key: Nhập Key Vào & Lấy Key Ra</div>
+      <div style="font-size:12.5px; color:#94a3b8;">Chọn đơn / mặt hàng để quản lý kho key:</div>
+      <select id="adminStockSelect" onchange="renderAdminStockList()"></select>
+
+      <textarea id="importKeysArea" rows="3" placeholder="Nhập key vào kho (mỗi dòng 1 key)..."></textarea>
+      <button onclick="adminImportKeys()">Nhập key vào kho</button>
+
+      <div class="row-3">
+        <input id="takeKeysQty" type="number" min="1" value="1" placeholder="SL lấy ra" style="margin:0;" />
+        <button class="amber" style="margin:0;" onclick="adminTakeKeys()">Lấy key ra</button>
+        <button class="dark" style="margin:0;" onclick="copyTakenKeys()">Copy key lấy</button>
+      </div>
+
+      <div id="takenKeysOutput" class="key-box" style="display:none;"></div>
+      <div id="adminStockKeysList"></div>
+      <div id="adminStockMsg" class="msg"></div>
     </div>
   </div>
 
 </div>
 
 <script>
-  const DB_KEY = "kho_ctv_khong_ctv_v1";
-  const initialData = {
+  const STORAGE_KEY = "shop_key_giahuy_anhthu_v1";
+  let lastTakenKeysText = "";
+
+  const defaultState = {
     currentUser: null,
     users: {
-      admin: { username: "admin", password: "123", balance: 100000, isAdmin: true, isCtv: true },
-      khach1: { username: "khach1", password: "123", balance: 20000, isAdmin: false, isCtv: false }
+      admingiahuy: { username: "admingiahuy", password: "123", balance: 100000, isAdmin: true },
+      adminanhthu: { username: "adminanhthu", password: "123", balance: 100000, isAdmin: true },
+      khach1: { username: "khach1", password: "123", balance: 30000, isAdmin: false }
     },
-    keys: {
-      non_ctv: ["NOC-101", "NOC-102", "NOC-103"],
-      ctv: ["CTV-201", "CTV-202"]
-    },
-    orders: []
+    orderItems: [
+      { id: "item_1", name: "Key 1 Ngày", price: 10000, keys: ["D1-1111-AAAA", "D1-2222-BBBB"] },
+      { id: "item_7", name: "Key 7 Ngày", price: 50000, keys: ["D7-3333-CCCC"] }
+    ],
+    purchases: []
   };
 
   let state = loadState();
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(DB_KEY);
-      if (!raw) return structuredClone(initialData);
-      return Object.assign(structuredClone(initialData), JSON.parse(raw));
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return structuredClone(defaultState);
+      const parsed = JSON.parse(raw);
+      const mergedUsers = Object.assign({}, structuredClone(defaultState.users), parsed.users || {});
+      mergedUsers.admingiahuy = Object.assign({ username: "admingiahuy", password: "123", balance: 100000 }, mergedUsers.admingiahuy || {}, { isAdmin: true });
+      mergedUsers.adminanhthu = Object.assign({ username: "adminanhthu", password: "123", balance: 100000 }, mergedUsers.adminanhthu || {}, { isAdmin: true });
+      return {
+        currentUser: parsed.currentUser || null,
+        users: mergedUsers,
+        orderItems: Array.isArray(parsed.orderItems) ? parsed.orderItems : structuredClone(defaultState.orderItems),
+        purchases: Array.isArray(parsed.purchases) ? parsed.purchases : []
+      };
     } catch (e) {
-      return structuredClone(initialData);
+      return structuredClone(defaultState);
     }
   }
 
   function saveState() {
-    localStorage.setItem(DB_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 
   function currentUser() {
-    return state.currentUser && state.users[state.currentUser] ? state.users[state.currentUser] : null;
+    if (!state.currentUser || !state.users[state.currentUser]) return null;
+    return state.users[state.currentUser];
   }
 
   function isAdmin() {
@@ -183,9 +211,10 @@
   function register() {
     const name = document.getElementById("uName").value.trim().toLowerCase();
     const pass = document.getElementById("uPass").value;
-    if (!name || pass.length < 3) return showMsg("authMsg", false, "Nhập tên và mật khẩu (>= 3 ký tự).");
+    if (!name || pass.length < 3) return showMsg("authMsg", false, "Nhập tên tài khoản và mật khẩu (>= 3 ký tự).");
     if (state.users[name]) return showMsg("authMsg", false, "Tài khoản đã tồn tại.");
-    state.users[name] = { username: name, password: pass, balance: 0, isAdmin: name === "admin", isCtv: false };
+    const grantAdmin = name === "admingiahuy" || name === "adminanhthu";
+    state.users[name] = { username: name, password: pass, balance: 0, isAdmin: grantAdmin };
     state.currentUser = name;
     saveState();
     document.getElementById("authBox").style.display = "none";
@@ -209,62 +238,71 @@
     render();
   }
 
-  function updateCalc() {
-    const qNon = Math.max(0, Math.floor(Number(document.getElementById("nonCtvQty").value || 0)));
-    const qCtv = Math.max(0, Math.floor(Number(document.getElementById("ctvQty").value || 0)));
-    document.getElementById("nonCtvMoney").textContent = (qNon * 400).toLocaleString("vi-VN") + "đ";
-    document.getElementById("ctvMoney").textContent = (qCtv * 330).toLocaleString("vi-VN") + "đ";
+  function getItemById(id) {
+    return state.orderItems.find(function (it) { return it.id === id; }) || null;
   }
 
-  function buyPool(pool) {
-    const isCtvPool = pool === "ctv";
-    const msgId = isCtvPool ? "ctvMsg" : "nonCtvMsg";
-    const qtyId = isCtvPool ? "ctvQty" : "nonCtvQty";
-    const price = isCtvPool ? 330 : 400;
-    const label = isCtvPool ? "Kho CTV" : "Kho không CTV";
+  function updateShopCalc() {
+    const sel = document.getElementById("shopOrderSelect");
+    const item = getItemById(sel.value);
+    const qty = Math.max(1, Math.floor(Number(document.getElementById("shopBuyQty").value || 1)));
+    document.getElementById("shopBuyQty").value = qty;
 
+    if (!item) {
+      document.getElementById("selectedStockBadge").textContent = "Kho: 0 key";
+      document.getElementById("shopTotalMoney").textContent = "0đ";
+      return;
+    }
+    const stockCount = Array.isArray(item.keys) ? item.keys.length : 0;
+    document.getElementById("selectedStockBadge").textContent = "Kho: " + stockCount + " key";
+    document.getElementById("shopTotalMoney").textContent = (Number(item.price || 0) * qty).toLocaleString("vi-VN") + "đ";
+  }
+
+  function buySelectedOrderItem() {
     const u = currentUser();
     if (!u) {
       document.getElementById("authBox").style.display = "block";
-      return showMsg(msgId, false, "Vui lòng đăng nhập để mua key.");
-    }
-    if (isCtvPool && !u.isCtv && !u.isAdmin) {
-      return showMsg(msgId, false, "Tài khoản này chưa được cấp quyền CTV.");
+      return showMsg("shopBuyMsg", false, "Vui lòng đăng nhập để mua key.");
     }
 
-    const qty = Math.floor(Number(document.getElementById(qtyId).value || 0));
-    if (qty < 1) return showMsg(msgId, false, "Nhập số lượng key >= 1.");
+    const item = getItemById(document.getElementById("shopOrderSelect").value);
+    if (!item) return showMsg("shopBuyMsg", false, "Chưa có đơn / mặt hàng nào.");
 
-    const stock = state.keys[pool] || [];
-    if (stock.length < qty) return showMsg(msgId, false, `${label} chỉ còn ${stock.length} key.`);
+    const qty = Math.max(1, Math.floor(Number(document.getElementById("shopBuyQty").value || 1)));
+    item.keys = Array.isArray(item.keys) ? item.keys : [];
+    if (item.keys.length < qty) {
+      return showMsg("shopBuyMsg", false, `Kho của "${item.name}" chỉ còn ${item.keys.length} key.`);
+    }
 
-    const total = qty * price;
-    if (u.balance < total) return showMsg(msgId, false, "Số dư không đủ.");
+    const total = Number(item.price || 0) * qty;
+    if (u.balance < total) {
+      return showMsg("shopBuyMsg", false, `Số dư không đủ! Cần ${total.toLocaleString("vi-VN")}đ.`);
+    }
 
-    const bought = stock.splice(0, qty);
+    const boughtKeys = item.keys.splice(0, qty);
     u.balance -= total;
-    state.orders.unshift({
-      id: "DH" + Date.now(),
+    state.purchases.unshift({
+      id: "ORD" + Date.now(),
       buyer: u.username,
-      title: `${label} x${qty}`,
+      itemName: `${item.name} x${qty}`,
       total: total,
-      keys: bought,
+      keys: boughtKeys,
       time: new Date().toLocaleString("vi-VN")
     });
 
-    document.getElementById(qtyId).value = "";
-    updateCalc();
     saveState();
     render();
-    showMsg(msgId, true, `Mua thành công ${qty} key (${total.toLocaleString("vi-VN")}đ).`);
+    showMsg("shopBuyMsg", true, `Mua thành công ${qty} key "${item.name}"!`);
   }
 
   function adminAddBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
-    const amt = Number(document.getElementById("addBalanceInput").value || 0);
-    if (!state.users[target] || !amt) return showMsg("adminBalMsg", false, "Nhập đúng tên tài khoản và số tiền khác 0.");
-    state.users[target].balance += amt;
+    const amt = Number(document.getElementById("balanceDelta").value || 0);
+    if (!state.users[target] || !amt) {
+      return showMsg("adminBalMsg", false, "Nhập đúng tên tài khoản và số tiền khác 0.");
+    }
+    state.users[target].balance = Number(state.users[target].balance || 0) + amt;
     saveState();
     render();
     showMsg("adminBalMsg", true, `Đã +${amt.toLocaleString("vi-VN")}đ cho ${target}.`);
@@ -273,74 +311,199 @@
   function adminClearBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
-    if (!state.users[target]) return showMsg("adminBalMsg", false, "Không tìm thấy tài khoản.");
+    if (!state.users[target]) {
+      return showMsg("adminBalMsg", false, "Không tìm thấy tài khoản.");
+    }
     state.users[target].balance = 0;
     saveState();
     render();
     showMsg("adminBalMsg", true, `Đã xóa số dư của ${target} về 0đ.`);
   }
 
-  function adminImportKeys(pool) {
+  function adminCreateOrderItem() {
     if (!isAdmin()) return;
-    const areaId = pool === "ctv" ? "importCtvArea" : "importNonCtvArea";
-    const lines = document.getElementById(areaId).value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!lines.length) return;
-    state.keys[pool] = (state.keys[pool] || []).concat(lines);
-    document.getElementById(areaId).value = "";
+    const name = document.getElementById("newOrderName").value.trim();
+    const price = Number(document.getElementById("newOrderPrice").value || 0);
+    if (!name || !Number.isFinite(price) || price <= 0) {
+      return showMsg("adminCreateMsg", false, "Nhập đủ tên hàng và số tiền hợp lệ (> 0).");
+    }
+    const newId = "item_" + Date.now();
+    state.orderItems.push({ id: newId, name: name, price: price, keys: [] });
+    document.getElementById("newOrderName").value = "";
+    document.getElementById("newOrderPrice").value = "";
     saveState();
     render();
+    document.getElementById("shopOrderSelect").value = newId;
+    document.getElementById("adminStockSelect").value = newId;
+    updateShopCalc();
+    renderAdminStockList();
+    showMsg("adminCreateMsg", true, `Đã tạo đơn hàng "${name}" (${price.toLocaleString("vi-VN")}đ).`);
   }
 
-  function adminDeleteKey(pool, idx) {
+  function adminRemoveOrderItem(itemId) {
     if (!isAdmin()) return;
-    state.keys[pool].splice(idx, 1);
+    const item = getItemById(itemId);
+    if (!item) return;
+    state.orderItems = state.orderItems.filter(function (it) { return it.id !== itemId; });
     saveState();
     render();
+    showMsg("adminCreateMsg", true, `Đã gỡ đơn hàng "${item.name}".`);
   }
 
-  function renderAdminKeyList(pool, elId) {
-    const list = state.keys[pool] || [];
-    const el = document.getElementById(elId);
-    if (!list.length) {
-      el.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho trống.</div>`;
+  function adminImportKeys() {
+    if (!isAdmin()) return;
+    const item = getItemById(document.getElementById("adminStockSelect").value);
+    if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để nhập key.");
+    const lines = document.getElementById("importKeysArea").value
+      .split(/\r?\n/)
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean);
+    if (!lines.length) return showMsg("adminStockMsg", false, "Nhập ít nhất 1 mã key.");
+
+    item.keys = (Array.isArray(item.keys) ? item.keys : []).concat(lines);
+    document.getElementById("importKeysArea").value = "";
+    saveState();
+    render();
+    document.getElementById("adminStockSelect").value = item.id;
+    renderAdminStockList();
+    showMsg("adminStockMsg", true, `Đã nhập ${lines.length} key vào kho "${item.name}".`);
+  }
+
+  function adminTakeKeys() {
+    if (!isAdmin()) return;
+    const item = getItemById(document.getElementById("adminStockSelect").value);
+    if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để lấy key.");
+    const count = Math.max(1, Math.floor(Number(document.getElementById("takeKeysQty").value || 1)));
+    item.keys = Array.isArray(item.keys) ? item.keys : [];
+    if (item.keys.length < count) {
+      return showMsg("adminStockMsg", false, `Kho "${item.name}" chỉ còn ${item.keys.length} key.`);
+    }
+    const taken = item.keys.splice(0, count);
+    lastTakenKeysText = taken.join("\n");
+    const outBox = document.getElementById("takenKeysOutput");
+    outBox.style.display = "block";
+    outBox.textContent = "Key đã lấy ra:\n" + lastTakenKeysText;
+
+    saveState();
+    render();
+    document.getElementById("adminStockSelect").value = item.id;
+    renderAdminStockList();
+    showMsg("adminStockMsg", true, `Đã lấy ${taken.length} key ra khỏi kho "${item.name}".`);
+  }
+
+  async function copyTakenKeys() {
+    if (!lastTakenKeysText) return showMsg("adminStockMsg", false, "Chưa có key nào được lấy ra.");
+    try {
+      await navigator.clipboard.writeText(lastTakenKeysText);
+      showMsg("adminStockMsg", true, "Đã copy key lấy ra.");
+    } catch (e) {
+      showMsg("adminStockMsg", false, "Hãy bôi đen khung key để copy.");
+    }
+  }
+
+  function adminDeleteSingleKey(itemId, idx) {
+    if (!isAdmin()) return;
+    const item = getItemById(itemId);
+    if (!item || !Array.isArray(item.keys)) return;
+    item.keys.splice(idx, 1);
+    saveState();
+    render();
+    document.getElementById("adminStockSelect").value = item.id;
+    renderAdminStockList();
+  }
+
+  function renderAdminStockList() {
+    const item = getItemById(document.getElementById("adminStockSelect").value);
+    const listEl = document.getElementById("adminStockKeysList");
+    if (!item) {
+      listEl.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Chưa có đơn hàng.</div>`;
       return;
     }
-    el.innerHTML = list.map(function (k, i) {
-      return `<div class="key-row"><span class="key-code">${k}</span><button class="red small" onclick="adminDeleteKey('${pool}', ${i})">Xóa</button></div>`;
+    const keys = Array.isArray(item.keys) ? item.keys : [];
+    if (!keys.length) {
+      listEl.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho "${item.name}" hiện còn 0 key.</div>`;
+      return;
+    }
+    listEl.innerHTML = keys.map(function (k, idx) {
+      return `<div class="key-row">
+        <span class="key-code">${k}</span>
+        <button class="red small" onclick="adminDeleteSingleKey('${item.id}', ${idx})">Xóa</button>
+      </div>`;
     }).join("");
   }
 
   function render() {
     const u = currentUser();
-    document.getElementById("userLabel").textContent = u ? `${u.username}${u.isAdmin ? " (Admin)" : ""}` : "Khách (Chưa đăng nhập)";
-    document.getElementById("balanceLabel").textContent = (u ? u.balance : 0).toLocaleString("vi-VN") + "đ";
+    const adminOk = isAdmin();
+
+    document.getElementById("userLabel").textContent = u ? u.username : "Khách (Chưa đăng nhập)";
+    document.getElementById("balanceLabel").textContent = (u ? Number(u.balance || 0) : 0).toLocaleString("vi-VN") + "đ";
+    document.getElementById("roleTag").textContent = !u ? "Khách xem key" : (adminOk ? "Admin" : "Thành viên");
+    document.getElementById("roleTag").className = "pill" + (adminOk ? " admin" : "");
     document.getElementById("btnOpenAuth").style.display = u ? "none" : "inline-block";
     document.getElementById("btnLogout").style.display = u ? "inline-block" : "none";
-    document.getElementById("adminPanel").style.display = u && u.isAdmin ? "block" : "none";
+    document.getElementById("adminPanel").style.display = adminOk ? "block" : "none";
 
-    document.getElementById("nonCtvStockBadge").textContent = "Kho không CTV: " + (state.keys.non_ctv || []).length + " key";
-    document.getElementById("ctvStockBadge").textContent = "Kho CTV: " + (state.keys.ctv || []).length + " key";
+    const shopSel = document.getElementById("shopOrderSelect");
+    const prevShopId = shopSel.value;
+    shopSel.innerHTML = state.orderItems.length
+      ? state.orderItems.map(function (it) {
+          const cnt = Array.isArray(it.keys) ? it.keys.length : 0;
+          return `<option value="${it.id}">${it.name} — ${Number(it.price || 0).toLocaleString("vi-VN")}đ (Kho: ${cnt} key)</option>`;
+        }).join("")
+      : `<option value="">-- Chưa có đơn hàng --</option>`;
+    if (prevShopId && Array.from(shopSel.options).some(function (o) { return o.value === prevShopId; })) {
+      shopSel.value = prevShopId;
+    }
+    updateShopCalc();
 
-    const ordersBox = document.getElementById("myOrdersBox");
+    const myBox = document.getElementById("myOrdersBox");
     if (!u) {
-      ordersBox.innerHTML = "Vui lòng đăng nhập để xem key đã mua.";
+      myBox.innerHTML = "Vui lòng đăng nhập để xem key đã mua.";
     } else {
-      const mine = state.orders.filter(function (o) { return o.buyer === u.username; });
-      ordersBox.innerHTML = mine.length ? mine.map(function (o) {
+      const mine = state.purchases.filter(function (p) { return p.buyer === u.username; });
+      myBox.innerHTML = mine.length ? mine.map(function (p) {
         return `<div class="item">
-          <div style="display:flex; justify-content:space-between; gap:8px;"><b>${o.title}</b><span style="color:#facc15; font-weight:700;">${o.total.toLocaleString("vi-VN")}đ</span></div>
-          <div style="font-size:12px; color:#94a3b8;">${o.time}</div>
-          <div class="key-box">${o.keys.join("\n")}</div>
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <b>${p.itemName}</b>
+            <span style="color:#facc15; font-weight:700;">${Number(p.total || 0).toLocaleString("vi-VN")}đ</span>
+          </div>
+          <div style="font-size:12px; color:#94a3b8;">${p.time}</div>
+          <div class="key-box">${(p.keys || []).join("\n")}</div>
         </div>`;
       }).join("") : "Chưa có key nào.";
     }
 
-    if (u && u.isAdmin) {
+    if (adminOk) {
       document.getElementById("adminUsersList").innerHTML = Object.values(state.users).map(function (usr) {
-        return `<div class="item"><b>${usr.username}</b> • Số dư: <b style="color:#4ade80;">${usr.balance.toLocaleString("vi-VN")}đ</b></div>`;
+        return `<div class="item">
+          <b>${usr.username}</b>${usr.isAdmin ? ' <span class="pill admin">Admin</span>' : ""}
+          • Số dư: <b style="color:#4ade80;">${Number(usr.balance || 0).toLocaleString("vi-VN")}đ</b>
+        </div>`;
       }).join("");
-      renderAdminKeyList("non_ctv", "adminNonCtvList");
-      renderAdminKeyList("ctv", "adminCtvList");
+
+      document.getElementById("adminCreatedOrdersList").innerHTML = state.orderItems.length
+        ? state.orderItems.map(function (it) {
+            const cnt = Array.isArray(it.keys) ? it.keys.length : 0;
+            return `<div class="key-row">
+              <div><b>${it.name}</b> • <span style="color:#fb7185; font-weight:700;">${Number(it.price || 0).toLocaleString("vi-VN")}đ</span> • <span style="color:#94a3b8; font-size:12px;">Kho: ${cnt} key</span></div>
+              <button class="red small" onclick="adminRemoveOrderItem('${it.id}')">Gỡ</button>
+            </div>`;
+          }).join("")
+        : `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Chưa có đơn hàng nào.</div>`;
+
+      const stockSel = document.getElementById("adminStockSelect");
+      const prevStockId = stockSel.value;
+      stockSel.innerHTML = state.orderItems.length
+        ? state.orderItems.map(function (it) {
+            const cnt = Array.isArray(it.keys) ? it.keys.length : 0;
+            return `<option value="${it.id}">${it.name} (${Number(it.price || 0).toLocaleString("vi-VN")}đ) - ${cnt} key</option>`;
+          }).join("")
+        : `<option value="">-- Chưa có đơn hàng --</option>`;
+      if (prevStockId && Array.from(stockSel.options).some(function (o) { return o.value === prevStockId; })) {
+        stockSel.value = prevStockId;
+      }
+      renderAdminStockList();
     }
   }
 
