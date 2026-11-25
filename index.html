@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Key & Đơn Hàng</title>
+  <title>Shop Key & CTV</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
@@ -25,10 +25,12 @@
     .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
     .pill { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
     .pill.admin { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
+    .pill.ctv { background: rgba(74, 222, 128, 0.14); color: #4ade80; border-color: rgba(74, 222, 128, 0.35); }
 
     .head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .calc-text { font-size: 14px; color: #cbd5e1; margin: 4px 0 10px; }
-    .calc-text b { color: #fb7185; }
+    .calc-text b.pink { color: #fb7185; }
+    .calc-text b.amber { color: #fbbf24; }
 
     .item { background: #0b101b; border: 1px solid #222c44; border-radius: 12px; padding: 12px; margin-top: 10px; }
     .key-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #111726; border: 1px solid #25304b; border-radius: 9px; padding: 8px 10px; margin-top: 6px; }
@@ -55,8 +57,9 @@
         Số dư: <b id="balanceLabel" style="color:#4ade80;">0đ</b>
       </div>
     </div>
-    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
       <span id="roleTag" class="pill">Khách xem key</span>
+      <span id="ctvTag" class="pill ctv" style="display:none;">CTV</span>
       <button id="btnOpenAuth" class="green small" onclick="toggleAuth()">Đăng nhập</button>
       <button id="btnLogout" class="dark small" style="display:none;" onclick="logout()">Đăng xuất</button>
     </div>
@@ -86,9 +89,24 @@
     <select id="shopOrderSelect" onchange="updateShopCalc()"></select>
 
     <input id="shopBuyQty" type="number" min="1" value="1" placeholder="Nhập số lượng key muốn mua..." oninput="updateShopCalc()" />
-    <div class="calc-text">Thành tiền: <b id="shopTotalMoney">0đ</b></div>
+    <div class="calc-text">Thành tiền: <b id="shopTotalMoney" class="pink">0đ</b></div>
     <button class="pink" onclick="buySelectedOrderItem()">Mua Key Ngay</button>
     <div id="shopBuyMsg" class="msg"></div>
+  </div>
+
+  <div class="card" style="border-color:#d97706;">
+    <div class="head-row">
+      <h2 style="color:#fbbf24;">Mua Key CTV</h2>
+      <span id="ctvStockBadge" class="pill admin">Kho CTV: 0 key</span>
+    </div>
+
+    <div style="font-size:13px; color:#94a3b8;">
+      Đơn giá CTV: <b id="ctvUnitPriceText" style="color:#fbbf24;">5.000đ/key</b> • Chỉ tài khoản được thêm làm CTV mới mua được.
+    </div>
+    <input id="ctvBuyQty" type="number" min="1" value="1" placeholder="Nhập số lượng key CTV muốn mua..." oninput="updateCtvCalc()" />
+    <div class="calc-text">Thành tiền CTV: <b id="ctvTotalMoney" class="amber">0đ</b></div>
+    <button class="amber" onclick="buyCtvKeys()">Mua Key CTV</button>
+    <div id="ctvBuyMsg" class="msg"></div>
   </div>
 
   <div class="card">
@@ -111,8 +129,20 @@
       <div id="adminBalMsg" class="msg"></div>
     </div>
 
+    <div class="item" style="border-color:#d97706;">
+      <div style="font-weight:700; margin-bottom:6px; color:#fbbf24;">2. Thêm / Gỡ Danh Sách Tài Khoản Được Mua Key CTV</div>
+      <input id="ctvTargetUser" type="text" placeholder="Nhập tên tài khoản để thêm hoặc gỡ CTV (VD: khach1)" />
+      <div class="row-2">
+        <button class="amber" onclick="adminSetCtv(true)">+ Thêm làm CTV</button>
+        <button class="dark" onclick="adminSetCtv(false)">Gỡ quyền CTV</button>
+      </div>
+      <div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Danh sách tài khoản đang làm CTV (được mua ở mục Mua Key CTV):</div>
+      <div id="adminCtvMembersList"></div>
+      <div id="adminCtvMemberMsg" class="msg"></div>
+    </div>
+
     <div class="item">
-      <div style="font-weight:700; margin-bottom:6px;">2. Tạo Đơn Hàng (Tên Hàng & Số Tiền) & Gỡ</div>
+      <div style="font-weight:700; margin-bottom:6px;">3. Tạo Đơn Hàng (Tên Hàng & Số Tiền) & Gỡ</div>
       <input id="newOrderName" type="text" placeholder="Tên hàng / tên đơn (VD: Key 1 Ngày)" />
       <input id="newOrderPrice" type="number" min="1" placeholder="Số tiền VNĐ (VD: 10000)" />
       <button class="green" onclick="adminCreateOrderItem()">+ Tạo đơn hàng</button>
@@ -122,7 +152,7 @@
     </div>
 
     <div class="item">
-      <div style="font-weight:700; margin-bottom:6px;">3. Kho Key: Nhập Key Vào & Lấy Key Ra</div>
+      <div style="font-weight:700; margin-bottom:6px;">4. Kho Key Thường: Nhập Key Vào & Lấy Key Ra</div>
       <div style="font-size:12.5px; color:#94a3b8;">Chọn đơn / mặt hàng để quản lý kho key:</div>
       <select id="adminStockSelect" onchange="renderAdminStockList()"></select>
 
@@ -132,32 +162,52 @@
       <div class="row-3">
         <input id="takeKeysQty" type="number" min="1" value="1" placeholder="SL lấy ra" style="margin:0;" />
         <button class="amber" style="margin:0;" onclick="adminTakeKeys()">Lấy key ra</button>
-        <button class="dark" style="margin:0;" onclick="copyTakenKeys()">Copy key lấy</button>
+        <button class="dark" style="margin:0;" onclick="copyTakenKeys('pkg')">Copy key lấy</button>
       </div>
 
       <div id="takenKeysOutput" class="key-box" style="display:none;"></div>
       <div id="adminStockKeysList"></div>
       <div id="adminStockMsg" class="msg"></div>
     </div>
+
+    <div class="item" style="border-color:#d97706;">
+      <div style="font-weight:700; margin-bottom:6px; color:#fbbf24;">5. Kho Key CTV: Nhập Key Vào & Lấy Key Ra</div>
+      <input id="ctvUnitPriceInput" type="number" min="1" placeholder="Giá 1 key CTV (VD: 5000)" onchange="adminSaveCtvPrice()" />
+      <textarea id="importCtvKeysArea" rows="3" placeholder="Nhập key CTV vào kho (mỗi dòng 1 key)..."></textarea>
+      <button class="amber" onclick="adminImportCtvKeys()">Nhập key vào kho CTV</button>
+
+      <div class="row-3">
+        <input id="takeCtvKeysQty" type="number" min="1" value="1" placeholder="SL lấy ra" style="margin:0;" />
+        <button class="green" style="margin:0;" onclick="adminTakeCtvKeys()">Lấy key CTV ra</button>
+        <button class="dark" style="margin:0;" onclick="copyTakenKeys('ctv')">Copy key CTV</button>
+      </div>
+
+      <div id="takenCtvKeysOutput" class="key-box" style="display:none;"></div>
+      <div id="adminCtvKeysList"></div>
+      <div id="adminCtvStockMsg" class="msg"></div>
+    </div>
   </div>
 
 </div>
 
 <script>
-  const STORAGE_KEY = "shop_key_giahuy_anhthu_v1";
-  let lastTakenKeysText = "";
+  const STORAGE_KEY = "shop_key_ctv_control_v1";
+  let lastTakenPkgKeys = "";
+  let lastTakenCtvKeys = "";
 
   const defaultState = {
     currentUser: null,
+    ctvPrice: 5000,
     users: {
-      admingiahuy: { username: "admingiahuy", password: "123", balance: 100000, isAdmin: true },
-      adminanhthu: { username: "adminanhthu", password: "123", balance: 100000, isAdmin: true },
-      khach1: { username: "khach1", password: "123", balance: 30000, isAdmin: false }
+      admingiahuy: { username: "admingiahuy", password: "123", balance: 100000, isAdmin: true, isCtv: true },
+      adminanhthu: { username: "adminanhthu", password: "123", balance: 100000, isAdmin: true, isCtv: true },
+      khach1: { username: "khach1", password: "123", balance: 30000, isAdmin: false, isCtv: false }
     },
     orderItems: [
       { id: "item_1", name: "Key 1 Ngày", price: 10000, keys: ["D1-1111-AAAA", "D1-2222-BBBB"] },
       { id: "item_7", name: "Key 7 Ngày", price: 50000, keys: ["D7-3333-CCCC"] }
     ],
+    ctvKeys: ["CTV-8888-1111", "CTV-8888-2222"],
     purchases: []
   };
 
@@ -169,12 +219,14 @@
       if (!raw) return structuredClone(defaultState);
       const parsed = JSON.parse(raw);
       const mergedUsers = Object.assign({}, structuredClone(defaultState.users), parsed.users || {});
-      mergedUsers.admingiahuy = Object.assign({ username: "admingiahuy", password: "123", balance: 100000 }, mergedUsers.admingiahuy || {}, { isAdmin: true });
-      mergedUsers.adminanhthu = Object.assign({ username: "adminanhthu", password: "123", balance: 100000 }, mergedUsers.adminanhthu || {}, { isAdmin: true });
+      mergedUsers.admingiahuy = Object.assign({ username: "admingiahuy", password: "123", balance: 100000, isCtv: true }, mergedUsers.admingiahuy || {}, { isAdmin: true });
+      mergedUsers.adminanhthu = Object.assign({ username: "adminanhthu", password: "123", balance: 100000, isCtv: true }, mergedUsers.adminanhthu || {}, { isAdmin: true });
       return {
         currentUser: parsed.currentUser || null,
+        ctvPrice: Number(parsed.ctvPrice || 5000) > 0 ? Number(parsed.ctvPrice) : 5000,
         users: mergedUsers,
         orderItems: Array.isArray(parsed.orderItems) ? parsed.orderItems : structuredClone(defaultState.orderItems),
+        ctvKeys: Array.isArray(parsed.ctvKeys) ? parsed.ctvKeys : structuredClone(defaultState.ctvKeys),
         purchases: Array.isArray(parsed.purchases) ? parsed.purchases : []
       };
     } catch (e) {
@@ -196,6 +248,11 @@
     return Boolean(u && u.isAdmin);
   }
 
+  function canBuyCtv() {
+    const u = currentUser();
+    return Boolean(u && (u.isCtv || u.isAdmin));
+  }
+
   function showMsg(id, ok, text) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -214,7 +271,7 @@
     if (!name || pass.length < 3) return showMsg("authMsg", false, "Nhập tên tài khoản và mật khẩu (>= 3 ký tự).");
     if (state.users[name]) return showMsg("authMsg", false, "Tài khoản đã tồn tại.");
     const grantAdmin = name === "admingiahuy" || name === "adminanhthu";
-    state.users[name] = { username: name, password: pass, balance: 0, isAdmin: grantAdmin };
+    state.users[name] = { username: name, password: pass, balance: 0, isAdmin: grantAdmin, isCtv: grantAdmin };
     state.currentUser = name;
     saveState();
     document.getElementById("authBox").style.display = "none";
@@ -258,6 +315,12 @@
     document.getElementById("shopTotalMoney").textContent = (Number(item.price || 0) * qty).toLocaleString("vi-VN") + "đ";
   }
 
+  function updateCtvCalc() {
+    const qty = Math.max(1, Math.floor(Number(document.getElementById("ctvBuyQty").value || 1)));
+    document.getElementById("ctvBuyQty").value = qty;
+    document.getElementById("ctvTotalMoney").textContent = (Number(state.ctvPrice || 0) * qty).toLocaleString("vi-VN") + "đ";
+  }
+
   function buySelectedOrderItem() {
     const u = currentUser();
     if (!u) {
@@ -295,6 +358,43 @@
     showMsg("shopBuyMsg", true, `Mua thành công ${qty} key "${item.name}"!`);
   }
 
+  function buyCtvKeys() {
+    const u = currentUser();
+    if (!u) {
+      document.getElementById("authBox").style.display = "block";
+      return showMsg("ctvBuyMsg", false, "Vui lòng đăng nhập để mua key CTV.");
+    }
+    if (!canBuyCtv()) {
+      return showMsg("ctvBuyMsg", false, "Tài khoản của bạn chưa được Admin thêm làm CTV để mua ở khu vực này.");
+    }
+
+    const qty = Math.max(1, Math.floor(Number(document.getElementById("ctvBuyQty").value || 1)));
+    state.ctvKeys = Array.isArray(state.ctvKeys) ? state.ctvKeys : [];
+    if (state.ctvKeys.length < qty) {
+      return showMsg("ctvBuyMsg", false, `Kho CTV chỉ còn ${state.ctvKeys.length} key.`);
+    }
+
+    const total = Number(state.ctvPrice || 0) * qty;
+    if (u.balance < total) {
+      return showMsg("ctvBuyMsg", false, `Số dư không đủ! Cần ${total.toLocaleString("vi-VN")}đ.`);
+    }
+
+    const boughtKeys = state.ctvKeys.splice(0, qty);
+    u.balance -= total;
+    state.purchases.unshift({
+      id: "ORD" + Date.now(),
+      buyer: u.username,
+      itemName: `Key CTV x${qty}`,
+      total: total,
+      keys: boughtKeys,
+      time: new Date().toLocaleString("vi-VN")
+    });
+
+    saveState();
+    render();
+    showMsg("ctvBuyMsg", true, `Mua thành công ${qty} key CTV!`);
+  }
+
   function adminAddBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
@@ -318,6 +418,19 @@
     saveState();
     render();
     showMsg("adminBalMsg", true, `Đã xóa số dư của ${target} về 0đ.`);
+  }
+
+  function adminSetCtv(enableCtv) {
+    if (!isAdmin()) return;
+    const target = document.getElementById("ctvTargetUser").value.trim().toLowerCase();
+    if (!target || !state.users[target]) {
+      return showMsg("adminCtvMemberMsg", false, "Không tìm thấy tài khoản này.");
+    }
+    state.users[target].isCtv = Boolean(enableCtv);
+    document.getElementById("ctvTargetUser").value = "";
+    saveState();
+    render();
+    showMsg("adminCtvMemberMsg", true, enableCtv ? `Đã thêm "${target}" làm CTV.` : `Đã gỡ quyền CTV của "${target}".`);
   }
 
   function adminCreateOrderItem() {
@@ -379,26 +492,16 @@
       return showMsg("adminStockMsg", false, `Kho "${item.name}" chỉ còn ${item.keys.length} key.`);
     }
     const taken = item.keys.splice(0, count);
-    lastTakenKeysText = taken.join("\n");
+    lastTakenPkgKeys = taken.join("\n");
     const outBox = document.getElementById("takenKeysOutput");
     outBox.style.display = "block";
-    outBox.textContent = "Key đã lấy ra:\n" + lastTakenKeysText;
+    outBox.textContent = "Key đã lấy ra:\n" + lastTakenPkgKeys;
 
     saveState();
     render();
     document.getElementById("adminStockSelect").value = item.id;
     renderAdminStockList();
     showMsg("adminStockMsg", true, `Đã lấy ${taken.length} key ra khỏi kho "${item.name}".`);
-  }
-
-  async function copyTakenKeys() {
-    if (!lastTakenKeysText) return showMsg("adminStockMsg", false, "Chưa có key nào được lấy ra.");
-    try {
-      await navigator.clipboard.writeText(lastTakenKeysText);
-      showMsg("adminStockMsg", true, "Đã copy key lấy ra.");
-    } catch (e) {
-      showMsg("adminStockMsg", false, "Hãy bôi đen khung key để copy.");
-    }
   }
 
   function adminDeleteSingleKey(itemId, idx) {
@@ -410,6 +513,67 @@
     render();
     document.getElementById("adminStockSelect").value = item.id;
     renderAdminStockList();
+  }
+
+  function adminSaveCtvPrice() {
+    if (!isAdmin()) return;
+    const p = Number(document.getElementById("ctvUnitPriceInput").value || 0);
+    if (!Number.isFinite(p) || p <= 0) return showMsg("adminCtvStockMsg", false, "Giá key CTV phải > 0.");
+    state.ctvPrice = p;
+    saveState();
+    render();
+    showMsg("adminCtvStockMsg", true, `Đã cập nhật giá key CTV: ${p.toLocaleString("vi-VN")}đ/key.`);
+  }
+
+  function adminImportCtvKeys() {
+    if (!isAdmin()) return;
+    const lines = document.getElementById("importCtvKeysArea").value
+      .split(/\r?\n/)
+      .map(function (s) { return s.trim(); })
+      .filter(Boolean);
+    if (!lines.length) return showMsg("adminCtvStockMsg", false, "Nhập ít nhất 1 key CTV.");
+    state.ctvKeys = (Array.isArray(state.ctvKeys) ? state.ctvKeys : []).concat(lines);
+    document.getElementById("importCtvKeysArea").value = "";
+    saveState();
+    render();
+    showMsg("adminCtvStockMsg", true, `Đã nhập ${lines.length} key vào kho CTV.`);
+  }
+
+  function adminTakeCtvKeys() {
+    if (!isAdmin()) return;
+    const count = Math.max(1, Math.floor(Number(document.getElementById("takeCtvKeysQty").value || 1)));
+    state.ctvKeys = Array.isArray(state.ctvKeys) ? state.ctvKeys : [];
+    if (state.ctvKeys.length < count) {
+      return showMsg("adminCtvStockMsg", false, `Kho CTV chỉ còn ${state.ctvKeys.length} key.`);
+    }
+    const taken = state.ctvKeys.splice(0, count);
+    lastTakenCtvKeys = taken.join("\n");
+    const outBox = document.getElementById("takenCtvKeysOutput");
+    outBox.style.display = "block";
+    outBox.textContent = "Key CTV đã lấy ra:\n" + lastTakenCtvKeys;
+
+    saveState();
+    render();
+    showMsg("adminCtvStockMsg", true, `Đã lấy ${taken.length} key CTV ra khỏi kho.`);
+  }
+
+  function adminDeleteCtvKey(idx) {
+    if (!isAdmin()) return;
+    state.ctvKeys.splice(idx, 1);
+    saveState();
+    render();
+  }
+
+  async function copyTakenKeys(type) {
+    const text = type === "ctv" ? lastTakenCtvKeys : lastTakenPkgKeys;
+    const msgId = type === "ctv" ? "adminCtvStockMsg" : "adminStockMsg";
+    if (!text) return showMsg(msgId, false, "Chưa có key nào được lấy ra.");
+    try {
+      await navigator.clipboard.writeText(text);
+      showMsg(msgId, true, "Đã copy danh sách key vừa lấy.");
+    } catch (e) {
+      showMsg(msgId, false, "Hãy bôi đen khung key để copy.");
+    }
   }
 
   function renderAdminStockList() {
@@ -435,14 +599,20 @@
   function render() {
     const u = currentUser();
     const adminOk = isAdmin();
+    const ctvOk = canBuyCtv();
 
     document.getElementById("userLabel").textContent = u ? u.username : "Khách (Chưa đăng nhập)";
     document.getElementById("balanceLabel").textContent = (u ? Number(u.balance || 0) : 0).toLocaleString("vi-VN") + "đ";
     document.getElementById("roleTag").textContent = !u ? "Khách xem key" : (adminOk ? "Admin" : "Thành viên");
     document.getElementById("roleTag").className = "pill" + (adminOk ? " admin" : "");
+    document.getElementById("ctvTag").style.display = u && ctvOk ? "inline-block" : "none";
     document.getElementById("btnOpenAuth").style.display = u ? "none" : "inline-block";
     document.getElementById("btnLogout").style.display = u ? "inline-block" : "none";
     document.getElementById("adminPanel").style.display = adminOk ? "block" : "none";
+
+    document.getElementById("ctvStockBadge").textContent = "Kho CTV: " + (state.ctvKeys || []).length + " key";
+    document.getElementById("ctvUnitPriceText").textContent = Number(state.ctvPrice || 0).toLocaleString("vi-VN") + "đ/key";
+    updateCtvCalc();
 
     const shopSel = document.getElementById("shopOrderSelect");
     const prevShopId = shopSel.value;
@@ -477,10 +647,21 @@
     if (adminOk) {
       document.getElementById("adminUsersList").innerHTML = Object.values(state.users).map(function (usr) {
         return `<div class="item">
-          <b>${usr.username}</b>${usr.isAdmin ? ' <span class="pill admin">Admin</span>' : ""}
+          <b>${usr.username}</b>${usr.isAdmin ? ' <span class="pill admin">Admin</span>' : ""}${usr.isCtv ? ' <span class="pill ctv">CTV</span>' : ""}
           • Số dư: <b style="color:#4ade80;">${Number(usr.balance || 0).toLocaleString("vi-VN")}đ</b>
         </div>`;
       }).join("");
+
+      const ctvMembers = Object.values(state.users).filter(function (usr) { return Boolean(usr.isCtv); });
+      document.getElementById("adminCtvMembersList").innerHTML = ctvMembers.length
+        ? ctvMembers.map(function (usr) {
+            const canRemove = usr.username !== "admingiahuy" && usr.username !== "adminanhthu";
+            return `<div class="key-row">
+              <span><b style="color:#fbbf24;">${usr.username}</b> ${usr.isAdmin ? "(Admin)" : "(CTV)"}</span>
+              ${canRemove ? `<button class="red small" onclick="adminSetCtvForUser('${usr.username}', false)">Gỡ CTV</button>` : `<span style="font-size:12px; color:#94a3b8;">Mặc định</span>`}
+            </div>`;
+          }).join("")
+        : `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Chưa có tài khoản CTV nào.</div>`;
 
       document.getElementById("adminCreatedOrdersList").innerHTML = state.orderItems.length
         ? state.orderItems.map(function (it) {
@@ -504,7 +685,26 @@
         stockSel.value = prevStockId;
       }
       renderAdminStockList();
+
+      document.getElementById("ctvUnitPriceInput").value = state.ctvPrice;
+      const ctvStockList = state.ctvKeys || [];
+      document.getElementById("adminCtvKeysList").innerHTML = ctvStockList.length
+        ? ctvStockList.map(function (k, idx) {
+            return `<div class="key-row">
+              <span class="key-code">${k}</span>
+              <button class="red small" onclick="adminDeleteCtvKey(${idx})">Xóa</button>
+            </div>`;
+          }).join("")
+        : `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho CTV hiện còn 0 key.</div>`;
     }
+  }
+
+  function adminSetCtvForUser(username, enableCtv) {
+    if (!isAdmin() || !state.users[username]) return;
+    state.users[username].isCtv = Boolean(enableCtv);
+    saveState();
+    render();
+    showMsg("adminCtvMemberMsg", true, `Đã gỡ quyền CTV của "${username}".`);
   }
 
   render();
