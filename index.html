@@ -3,159 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Key Tự Động</title>
+  <title>Mua Kho Key CTV & Không CTV</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
-    body { margin: 0; background: #090c12; color: #f8fafc; padding: 12px; }
-    .wrap { max-width: 720px; margin: 0 auto; }
-    .card { background: #131826; border: 1px solid #242c42; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-    h2, h3 { margin: 0 0 10px; font-size: 16px; }
-    input, textarea, select, button { width: 100%; padding: 10px 12px; margin: 6px 0; border-radius: 10px; border: 1px solid #2c3652; font-size: 14px; }
-    input, textarea, select { background: #0b0f19; color: #fff; }
+    body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
+    .wrap { max-width: 680px; margin: 0 auto; }
+    .card { background: #131927; border: 1px solid #242e46; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+    h2 { margin: 0; font-size: 18px; line-height: 1.3; font-weight: 800; }
+    input, textarea, button { width: 100%; padding: 12px 14px; margin: 8px 0; border-radius: 12px; border: 1px solid #2c3856; font-size: 15px; }
+    input, textarea { background: #0b101b; color: #f8fafc; }
+    input::placeholder, textarea::placeholder { color: #8c9bb5; }
     button { background: #2563eb; color: #fff; font-weight: 700; border: none; cursor: pointer; }
-    button:hover { opacity: 0.92; }
+    button:hover { opacity: 0.93; }
     button.green { background: #16a34a; }
-    button.pink { background: #e11d48; }
-    button.red { background: #dc2626; }
     button.amber { background: #d97706; }
-    button.dark { background: #1c2336; border: 1px solid #303b59; color: #e2e8f0; }
-    button.small { width: auto; padding: 6px 10px; font-size: 12px; margin: 0; }
+    button.red { background: #dc2626; }
+    button.dark { background: #1c2438; border: 1px solid #324063; color: #e2e8f0; }
+    button.small { width: auto; padding: 6px 10px; font-size: 12px; margin: 0; border-radius: 9px; }
 
     .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .badge { display: inline-block; font-size: 11.5px; padding: 3px 8px; border-radius: 999px; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
-    .badge.admin { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
+    .pill { display: inline-block; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
+    .pill.ctv { background: rgba(251, 191, 36, 0.14); color: #fbbf24; border-color: rgba(251, 191, 36, 0.38); }
 
-    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
-    .stat { background: #131826; border: 1px solid #242c42; border-radius: 12px; padding: 12px; }
-    .stat-lbl { font-size: 11.5px; color: #94a3b8; font-weight: 700; }
-    .stat-val { font-size: 18px; font-weight: 800; margin-top: 4px; color: #4ade80; }
+    .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .calc-text { font-size: 14px; color: #cbd5e1; margin: 4px 0 10px; }
+    .calc-text b.blue { color: #38bdf8; }
+    .calc-text b.amber { color: #fbbf24; }
 
-    .tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px; }
-    .tab-btn { width: auto; white-space: nowrap; margin: 0; padding: 8px 12px; font-size: 13px; background: #171e30; color: #94a3b8; border: 1px solid #26314d; }
-    .tab-btn.active { background: #e11d48; color: #fff; border-color: #fb7185; }
-
-    .pkg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-    @media (max-width: 420px) { .pkg-grid { grid-template-columns: repeat(2, 1fr); } }
-    .pkg-tile { background: #181f32; border: 1.5px solid #2a3554; border-radius: 12px; padding: 10px 8px; text-align: center; cursor: pointer; }
-    .pkg-tile.selected { border-color: #fb7185; background: rgba(225, 29, 72, 0.16); }
-    .pkg-name { font-size: 13px; font-weight: 700; }
-    .pkg-price { font-size: 13px; font-weight: 800; color: #fb7185; margin-top: 3px; }
-    .pkg-stock { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-
-    .qty-row { display: flex; gap: 8px; align-items: center; }
-    .qty-row button { width: 42px; height: 40px; margin: 0; padding: 0; font-size: 18px; flex-shrink: 0; }
-    .qty-row input { text-align: center; margin: 0; font-weight: 800; }
-
-    .item { background: #0b0f19; border: 1px solid #222b42; border-radius: 10px; padding: 10px; margin-top: 8px; }
-    .key-box { background: #060911; border: 1px dashed #22c55e; color: #4ade80; font-family: monospace; font-size: 12.5px; padding: 8px; border-radius: 8px; white-space: pre-line; word-break: break-all; margin-top: 6px; }
-    .key-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #121829; border: 1px solid #242e48; border-radius: 8px; padding: 7px 10px; margin-top: 6px; }
-    .msg { display: none; padding: 9px 12px; border-radius: 10px; font-size: 13px; margin-top: 8px; }
+    .item { background: #0b101b; border: 1px solid #222c44; border-radius: 12px; padding: 12px; margin-top: 10px; }
+    .key-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #111726; border: 1px solid #25304b; border-radius: 9px; padding: 8px 10px; margin-top: 6px; }
+    .key-code { font-family: monospace; font-size: 13px; color: #4ade80; word-break: break-all; }
+    .key-box { margin-top: 8px; background: #060911; border: 1px dashed #22c55e; color: #4ade80; font-family: monospace; font-size: 13px; padding: 10px; border-radius: 10px; white-space: pre-line; word-break: break-all; }
+    .msg { display: none; margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13.5px; }
     .msg.ok { display: block; background: #14532d; color: #dcfce7; }
     .msg.err { display: block; background: #7f1d1d; color: #fee2e2; }
-    .row-flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .row-flex > * { flex: 1; min-width: 120px; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <div class="wrap">
+
   <div class="card topbar">
     <div>
-      <div id="userTitle" style="font-weight:800; font-size:16px;">Khách (Chưa đăng nhập)</div>
-      <div style="margin-top:4px;">
-        <span id="roleBadge" class="badge">Khách xem key</span>
-        <span id="ctvBadge" class="badge" style="display:none;">CTV</span>
+      <div id="userLabel" style="font-weight:800; font-size:15px;">Khách (Chưa đăng nhập)</div>
+      <div style="font-size:13px; color:#94a3b8; margin-top:3px;">
+        Số dư: <b id="balanceLabel" style="color:#4ade80;">0đ</b>
       </div>
     </div>
-    <div style="display:flex; gap:6px;">
-      <button id="btnShowAuth" class="green small" onclick="toggleAuthBox()">Đăng nhập / Đăng ký</button>
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button id="btnOpenAuth" class="green small" onclick="toggleAuth()">Đăng nhập</button>
       <button id="btnLogout" class="dark small" style="display:none;" onclick="logout()">Đăng xuất</button>
     </div>
   </div>
 
   <div id="authBox" class="card" style="display:none;">
-    <h2>Đăng nhập / Đăng ký</h2>
-    <input id="authUser" type="text" placeholder="Tên tài khoản (VD: admin hoặc khach1)" />
-    <input id="authPass" type="password" placeholder="Mật khẩu..." />
-    <div class="row-flex">
+    <h2 style="margin-bottom:8px;">Đăng nhập tài khoản</h2>
+    <input id="uName" type="text" placeholder="Tên tài khoản (VD: admin hoặc khach1)" />
+    <input id="uPass" type="password" placeholder="Mật khẩu (123)" />
+    <div class="row-2">
       <button onclick="login()">Đăng nhập</button>
       <button class="green" onclick="register()">Đăng ký</button>
     </div>
-    <div style="font-size:12px; color:#94a3b8; margin-top:6px;">
-      Tài khoản <b>admin</b> (mật khẩu <b>123</b>) có quyền Admin.
-    </div>
+    <div style="font-size:12px; color:#94a3b8;">Tài khoản <b>admin</b> (mật khẩu <b>123</b>) có quyền Admin.</div>
     <div id="authMsg" class="msg"></div>
   </div>
 
-  <div class="stats">
-    <div class="stat">
-      <div class="stat-lbl">Số dư hiện tại</div>
-      <div id="statBalance" class="stat-val">0đ</div>
+  <div class="card">
+    <div class="head-row">
+      <h2>2. Mua Kho Không<br/>CTV (400đ/key)</h2>
+      <span id="nonCtvStockBadge" class="pill">Kho không CTV: 0 key</span>
     </div>
-    <div class="stat">
-      <div class="stat-lbl">Tổng key đã mua</div>
-      <div id="statKeysCount" class="stat-val" style="color:#fb7185;">0</div>
-    </div>
+    <input id="nonCtvQty" type="number" min="1" placeholder="Nhập số lượng key không CTV..." oninput="updateCalc()" />
+    <div class="calc-text">Thành tiền: <b id="nonCtvMoney" class="blue">0đ</b></div>
+    <button class="green" onclick="buyPool('non_ctv')">Mua Kho Không CTV</button>
+    <div id="nonCtvMsg" class="msg"></div>
   </div>
 
-  <div class="tabs">
-    <button id="tab_buy" class="tab-btn active" onclick="switchTab('buy')">Mua Key</button>
-    <button id="tab_mykeys" class="tab-btn" onclick="switchTab('mykeys')">Key Của Tôi</button>
-    <button id="tab_admin" class="tab-btn" style="display:none;" onclick="switchTab('admin')">Quản Lý Admin</button>
+  <div class="card" style="border-color:#d97706;">
+    <div class="head-row">
+      <h2>3. Mua Kho CTV<br/>(330đ/key)</h2>
+      <span id="ctvStockBadge" class="pill ctv">Kho CTV: 0 key</span>
+    </div>
+    <input id="ctvQty" type="number" min="1" placeholder="Nhập số lượng key CTV..." oninput="updateCalc()" />
+    <div class="calc-text">Thành tiền: <b id="ctvMoney" class="amber">0đ</b></div>
+    <button class="amber" onclick="buyPool('ctv')">Mua Kho CTV</button>
+    <div id="ctvMsg" class="msg"></div>
   </div>
 
-  <div id="panel_buy">
-    <div class="card">
-      <h2>1. Mua Mã Key Tự Động</h2>
-      <div id="pkgGrid" class="pkg-grid"></div>
-      <div class="qty-row">
-        <button class="dark" onclick="stepQty(-1)">-</button>
-        <input id="pkgQty" type="number" min="1" value="1" oninput="updatePkgSummary()" />
-        <button class="dark" onclick="stepQty(1)">+</button>
-      </div>
-      <div class="row-flex" style="margin-top:8px;">
-        <div style="font-size:13px; color:#94a3b8;">Thanh toán: <b id="pkgSummary" style="color:#fff;">Chưa chọn gói</b></div>
-        <div style="text-align:right; font-weight:800; color:#fb7185;" id="pkgTotal">0đ</div>
-      </div>
-      <button class="pink" onclick="buySelectedPkg()">Mua Key Ngay</button>
-      <div id="buyPkgMsg" class="msg"></div>
-    </div>
-
-    <div class="card">
-      <div class="row-flex">
-        <h2 style="margin:0;">2. Mua Tùy Chọn (400đ/key)</h2>
-        <div style="text-align:right;"><span id="nonCtvBadge" class="badge">Kho sỉ: 0 key</span></div>
-      </div>
-      <input id="nonCtvQty" type="number" min="1" placeholder="Nhập số lượng key..." oninput="calcNonCtv()" />
-      <div style="font-size:13px; color:#94a3b8;">Thành tiền: <b id="nonCtvTotal" style="color:#38bdf8;">0đ</b></div>
-      <button class="green" onclick="buyNonCtv()">Mua tùy chọn</button>
-      <div id="nonCtvMsg" class="msg"></div>
-    </div>
-
-    <div class="card" style="border-color:#f59e0b;">
-      <div class="row-flex">
-        <h2 style="margin:0; color:#fbbf24;">3. Mua Key CTV (330đ/key)</h2>
-        <div style="text-align:right;"><span id="ctvStockBadge" class="badge admin">Kho CTV: 0 key</span></div>
-      </div>
-      <input id="ctvQty" type="number" min="1" placeholder="Nhập số lượng key CTV..." oninput="calcCtv()" />
-      <div style="font-size:13px; color:#94a3b8;">Thành tiền: <b id="ctvTotal" style="color:#fbbf24;">0đ</b></div>
-      <button class="amber" onclick="buyCtv()">Mua Key CTV (330đ/key)</button>
-      <div id="ctvMsg" class="msg"></div>
-    </div>
+  <div class="card">
+    <h2 style="margin-bottom:8px;">Key Đã Mua</h2>
+    <div id="myOrdersBox" style="font-size:13.5px; color:#94a3b8;">Vui lòng đăng nhập để xem key đã mua.</div>
   </div>
 
-  <div id="panel_mykeys" style="display:none;">
-    <div class="card">
-      <h2>Key Đã Mua</h2>
-      <div id="myOrdersList">Vui lòng đăng nhập để xem key của bạn.</div>
-    </div>
-  </div>
+  <div id="adminPanel" class="card" style="display:none; border-color:#38bdf8;">
+    <h2 style="margin-bottom:10px; color:#38bdf8;">Quản Lý Admin (Chỉ Admin)</h2>
 
-  <div id="panel_admin" style="display:none;">
-    <div class="card">
-      <h2>+ Số Dư & Xóa Số Dư Cho Người Khác (Chỉ Admin)</h2>
+    <div class="item">
+      <div style="font-weight:700; margin-bottom:6px;">+ Số Dư & Xóa Số Dư Cho Người Khác</div>
       <input id="targetUser" type="text" placeholder="Tên tài khoản người nhận (VD: khach1)" />
-      <input id="balanceAmount" type="number" placeholder="Số tiền cộng (VNĐ, VD: 50000)" />
-      <div class="row-flex">
+      <input id="addBalanceInput" type="number" placeholder="Số tiền cộng (VD: 50000)" />
+      <div class="row-2">
         <button class="green" onclick="adminAddBalance()">+ Cộng số dư</button>
         <button class="red" onclick="adminClearBalance()">Xóa số dư (0đ)</button>
       </div>
@@ -163,462 +111,240 @@
       <div id="adminBalMsg" class="msg"></div>
     </div>
 
-    <div class="card">
-      <h2>Tạo Bảng Giá Key & Xóa Bảng Giá (Chỗ Key 1)</h2>
-      <input id="newPkgName" type="text" placeholder="Tên bảng giá / gói key (VD: Key 1 Ngày)" />
-      <input id="newPkgPrice" type="number" placeholder="Giá bán VNĐ (VD: 10000)" />
-      <button class="green" onclick="adminCreatePkg()">+ Tạo bảng giá key</button>
-
-      <div style="margin-top:10px; font-size:13px; color:#94a3b8;">Chọn bảng giá để nhập / lấy / xóa key hoặc xóa bảng giá:</div>
-      <div class="row-flex">
-        <select id="adminPkgSelect" onchange="renderAdminPkgStock()"></select>
-        <button class="red small" onclick="adminDeletePkg()">Xóa bảng giá</button>
-      </div>
-
-      <textarea id="importPkgKeysArea" rows="3" placeholder="Nhập key vào kho của bảng giá này (mỗi dòng 1 key)..."></textarea>
-      <div class="row-flex">
-        <button onclick="adminImportPkgKeys()">Nhập key vào kho</button>
-        <input id="takeKeyCount" type="number" min="1" value="1" placeholder="SL lấy" style="max-width:90px;" />
-        <button class="amber" onclick="adminTakePkgKeys()">Lấy key ra kho</button>
-      </div>
-      <div id="takenKeysBox" class="key-box" style="display:none;"></div>
-      <div id="adminPkgKeysList"></div>
-      <div id="adminPkgMsg" class="msg"></div>
+    <div class="item">
+      <div style="font-weight:700; margin-bottom:6px;">Nhập & Xóa Key Kho Không CTV</div>
+      <textarea id="importNonCtvArea" rows="2" placeholder="Nhập key không CTV (mỗi dòng 1 key)..."></textarea>
+      <button class="green" onclick="adminImportKeys('non_ctv')">Nhập Kho Không CTV</button>
+      <div id="adminNonCtvList"></div>
     </div>
 
-    <div class="card">
-      <h2>Kho Sỉ & Kho CTV (Nhập / Xóa Key)</h2>
-      <div class="row-flex">
-        <div>
-          <textarea id="importNonCtvArea" rows="2" placeholder="Key kho sỉ (mỗi dòng 1 key)..."></textarea>
-          <button class="green" onclick="adminImportPool('non_ctv', 'importNonCtvArea')">Nhập kho sỉ</button>
-        </div>
-        <div>
-          <textarea id="importCtvArea" rows="2" placeholder="Key kho CTV (mỗi dòng 1 key)..."></textarea>
-          <button class="amber" onclick="adminImportPool('ctv', 'importCtvArea')">Nhập kho CTV</button>
-        </div>
-      </div>
-      <div id="adminPoolList"></div>
-      <div id="adminPoolMsg" class="msg"></div>
+    <div class="item">
+      <div style="font-weight:700; margin-bottom:6px;">Nhập & Xóa Key Kho CTV</div>
+      <textarea id="importCtvArea" rows="2" placeholder="Nhập key CTV (mỗi dòng 1 key)..."></textarea>
+      <button class="amber" onclick="adminImportKeys('ctv')">Nhập Kho CTV</button>
+      <div id="adminCtvList"></div>
     </div>
   </div>
+
 </div>
 
 <script>
-  const STORE_KEY = "shop_key_auto_v2";
-
-  const defaultData = {
+  const DB_KEY = "kho_ctv_khong_ctv_v1";
+  const initialData = {
     currentUser: null,
     users: {
       admin: { username: "admin", password: "123", balance: 100000, isAdmin: true, isCtv: true },
       khach1: { username: "khach1", password: "123", balance: 20000, isAdmin: false, isCtv: false }
     },
-    packages: [
-      { id: "pkg_1d", name: "Key 1 Ngày", price: 10000 },
-      { id: "pkg_7d", name: "Key 7 Ngày", price: 50000 }
-    ],
     keys: {
-      pkg_1d: ["K1D-1111-AAAA", "K1D-2222-BBBB"],
-      pkg_7d: ["K7D-3333-CCCC"],
-      non_ctv: ["SI-0001", "SI-0002"],
-      ctv: ["CTV-0001", "CTV-0002"]
+      non_ctv: ["NOC-101", "NOC-102", "NOC-103"],
+      ctv: ["CTV-201", "CTV-202"]
     },
     orders: []
   };
 
-  let db = loadDb();
-  let selectedPkgId = db.packages[0] ? db.packages[0].id : "";
+  let state = loadState();
 
-  function loadDb() {
+  function loadState() {
     try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return structuredClone(defaultData);
-      return Object.assign(structuredClone(defaultData), JSON.parse(raw));
+      const raw = localStorage.getItem(DB_KEY);
+      if (!raw) return structuredClone(initialData);
+      return Object.assign(structuredClone(initialData), JSON.parse(raw));
     } catch (e) {
-      return structuredClone(defaultData);
+      return structuredClone(initialData);
     }
   }
 
-  function saveDb() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(db));
+  function saveState() {
+    localStorage.setItem(DB_KEY, JSON.stringify(state));
   }
 
-  function getUser() {
-    if (!db.currentUser || !db.users[db.currentUser]) return null;
-    return db.users[db.currentUser];
+  function currentUser() {
+    return state.currentUser && state.users[state.currentUser] ? state.users[state.currentUser] : null;
   }
 
   function isAdmin() {
-    const u = getUser();
+    const u = currentUser();
     return Boolean(u && u.isAdmin);
   }
 
-  function setMsg(id, ok, text) {
+  function showMsg(id, ok, text) {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = "msg " + (ok ? "ok" : "err");
     el.textContent = text;
   }
 
-  function requireLogin(msgId) {
-    if (getUser()) return true;
-    document.getElementById("authBox").style.display = "block";
-    setMsg(msgId || "authMsg", false, "Vui lòng đăng nhập để thực hiện thao tác này.");
-    return false;
-  }
-
-  function toggleAuthBox() {
+  function toggleAuth() {
     const box = document.getElementById("authBox");
     box.style.display = box.style.display === "none" ? "block" : "none";
   }
 
   function register() {
-    const name = document.getElementById("authUser").value.trim().toLowerCase();
-    const pass = document.getElementById("authPass").value;
-    if (!name || pass.length < 3) return setMsg("authMsg", false, "Nhập tên và mật khẩu (tối thiểu 3 ký tự).");
-    if (db.users[name]) return setMsg("authMsg", false, "Tài khoản đã tồn tại.");
-    db.users[name] = { username: name, password: pass, balance: 0, isAdmin: name === "admin", isCtv: false };
-    db.currentUser = name;
-    saveDb();
+    const name = document.getElementById("uName").value.trim().toLowerCase();
+    const pass = document.getElementById("uPass").value;
+    if (!name || pass.length < 3) return showMsg("authMsg", false, "Nhập tên và mật khẩu (>= 3 ký tự).");
+    if (state.users[name]) return showMsg("authMsg", false, "Tài khoản đã tồn tại.");
+    state.users[name] = { username: name, password: pass, balance: 0, isAdmin: name === "admin", isCtv: false };
+    state.currentUser = name;
+    saveState();
     document.getElementById("authBox").style.display = "none";
-    renderAll();
+    render();
   }
 
   function login() {
-    const name = document.getElementById("authUser").value.trim().toLowerCase();
-    const pass = document.getElementById("authPass").value;
-    const u = db.users[name];
-    if (!u || u.password !== pass) return setMsg("authMsg", false, "Sai tên tài khoản hoặc mật khẩu.");
-    db.currentUser = name;
-    saveDb();
+    const name = document.getElementById("uName").value.trim().toLowerCase();
+    const pass = document.getElementById("uPass").value;
+    const u = state.users[name];
+    if (!u || u.password !== pass) return showMsg("authMsg", false, "Sai tên tài khoản hoặc mật khẩu.");
+    state.currentUser = name;
+    saveState();
     document.getElementById("authBox").style.display = "none";
-    renderAll();
+    render();
   }
 
   function logout() {
-    db.currentUser = null;
-    saveDb();
-    switchTab("buy");
-    renderAll();
+    state.currentUser = null;
+    saveState();
+    render();
   }
 
-  function switchTab(tab) {
-    if (tab === "admin" && !isAdmin()) {
-      requireLogin("authMsg");
-      return;
+  function updateCalc() {
+    const qNon = Math.max(0, Math.floor(Number(document.getElementById("nonCtvQty").value || 0)));
+    const qCtv = Math.max(0, Math.floor(Number(document.getElementById("ctvQty").value || 0)));
+    document.getElementById("nonCtvMoney").textContent = (qNon * 400).toLocaleString("vi-VN") + "đ";
+    document.getElementById("ctvMoney").textContent = (qCtv * 330).toLocaleString("vi-VN") + "đ";
+  }
+
+  function buyPool(pool) {
+    const isCtvPool = pool === "ctv";
+    const msgId = isCtvPool ? "ctvMsg" : "nonCtvMsg";
+    const qtyId = isCtvPool ? "ctvQty" : "nonCtvQty";
+    const price = isCtvPool ? 330 : 400;
+    const label = isCtvPool ? "Kho CTV" : "Kho không CTV";
+
+    const u = currentUser();
+    if (!u) {
+      document.getElementById("authBox").style.display = "block";
+      return showMsg(msgId, false, "Vui lòng đăng nhập để mua key.");
     }
-    ["buy", "mykeys", "admin"].forEach(function (t) {
-      document.getElementById("panel_" + t).style.display = t === tab ? "block" : "none";
-      document.getElementById("tab_" + t).classList.toggle("active", t === tab);
-    });
-  }
-
-  function selectPkg(id) {
-    selectedPkgId = id;
-    renderPkgGrid();
-    updatePkgSummary();
-  }
-
-  function stepQty(d) {
-    const inp = document.getElementById("pkgQty");
-    inp.value = Math.max(1, Number(inp.value || 1) + d);
-    updatePkgSummary();
-  }
-
-  function updatePkgSummary() {
-    const pkg = db.packages.find(function (p) { return p.id === selectedPkgId; });
-    const qty = Math.max(1, Math.floor(Number(document.getElementById("pkgQty").value || 1)));
-    document.getElementById("pkgQty").value = qty;
-    if (!pkg) {
-      document.getElementById("pkgSummary").textContent = "Chưa chọn gói";
-      document.getElementById("pkgTotal").textContent = "0đ";
-      return;
+    if (isCtvPool && !u.isCtv && !u.isAdmin) {
+      return showMsg(msgId, false, "Tài khoản này chưa được cấp quyền CTV.");
     }
-    document.getElementById("pkgSummary").textContent = `${pkg.name} x${qty}`;
-    document.getElementById("pkgTotal").textContent = (pkg.price * qty).toLocaleString("vi-VN") + "đ";
-  }
 
-  function calcNonCtv() {
-    const q = Math.max(0, Math.floor(Number(document.getElementById("nonCtvQty").value || 0)));
-    document.getElementById("nonCtvTotal").textContent = (q * 400).toLocaleString("vi-VN") + "đ";
-  }
+    const qty = Math.floor(Number(document.getElementById(qtyId).value || 0));
+    if (qty < 1) return showMsg(msgId, false, "Nhập số lượng key >= 1.");
 
-  function calcCtv() {
-    const q = Math.max(0, Math.floor(Number(document.getElementById("ctvQty").value || 0)));
-    document.getElementById("ctvTotal").textContent = (q * 330).toLocaleString("vi-VN") + "đ";
-  }
+    const stock = state.keys[pool] || [];
+    if (stock.length < qty) return showMsg(msgId, false, `${label} chỉ còn ${stock.length} key.`);
 
-  function createOrder(title, total, keysList) {
-    const u = getUser();
+    const total = qty * price;
+    if (u.balance < total) return showMsg(msgId, false, "Số dư không đủ.");
+
+    const bought = stock.splice(0, qty);
     u.balance -= total;
-    db.orders.unshift({
+    state.orders.unshift({
       id: "DH" + Date.now(),
       buyer: u.username,
-      title: title,
+      title: `${label} x${qty}`,
       total: total,
-      keys: keysList,
-      createdAt: new Date().toLocaleString("vi-VN")
+      keys: bought,
+      time: new Date().toLocaleString("vi-VN")
     });
-    saveDb();
-    renderAll();
-  }
 
-  function buySelectedPkg() {
-    if (!requireLogin("buyPkgMsg")) return;
-    const u = getUser();
-    const pkg = db.packages.find(function (p) { return p.id === selectedPkgId; });
-    const qty = Math.max(1, Math.floor(Number(document.getElementById("pkgQty").value || 1)));
-    if (!pkg) return setMsg("buyPkgMsg", false, "Chưa chọn gói.");
-    const stock = db.keys[pkg.id] || [];
-    if (stock.length < qty) return setMsg("buyPkgMsg", false, `Gói chỉ còn ${stock.length} key.`);
-    const total = pkg.price * qty;
-    if (u.balance < total) return setMsg("buyPkgMsg", false, "Số dư không đủ.");
-    const bought = stock.splice(0, qty);
-    createOrder(`${pkg.name} x${qty}`, total, bought);
-    setMsg("buyPkgMsg", true, "Mua thành công: " + bought.join(", "));
-  }
-
-  function buyNonCtv() {
-    if (!requireLogin("nonCtvMsg")) return;
-    const u = getUser();
-    const qty = Math.floor(Number(document.getElementById("nonCtvQty").value || 0));
-    if (qty < 1) return setMsg("nonCtvMsg", false, "Nhập số lượng >= 1.");
-    const stock = db.keys.non_ctv || [];
-    if (stock.length < qty) return setMsg("nonCtvMsg", false, `Kho sỉ chỉ còn ${stock.length} key.`);
-    const total = qty * 400;
-    if (u.balance < total) return setMsg("nonCtvMsg", false, "Số dư không đủ.");
-    const bought = stock.splice(0, qty);
-    document.getElementById("nonCtvQty").value = "";
-    calcNonCtv();
-    createOrder(`Kho sỉ x${qty}`, total, bought);
-    setMsg("nonCtvMsg", true, "Mua thành công: " + bought.join(", "));
-  }
-
-  function buyCtv() {
-    if (!requireLogin("ctvMsg")) return;
-    const u = getUser();
-    if (!u.isCtv && !u.isAdmin) return setMsg("ctvMsg", false, "Tài khoản này chưa có quyền CTV.");
-    const qty = Math.floor(Number(document.getElementById("ctvQty").value || 0));
-    if (qty < 1) return setMsg("ctvMsg", false, "Nhập số lượng >= 1.");
-    const stock = db.keys.ctv || [];
-    if (stock.length < qty) return setMsg("ctvMsg", false, `Kho CTV chỉ còn ${stock.length} key.`);
-    const total = qty * 330;
-    if (u.balance < total) return setMsg("ctvMsg", false, "Số dư không đủ.");
-    const bought = stock.splice(0, qty);
-    document.getElementById("ctvQty").value = "";
-    calcCtv();
-    createOrder(`Kho CTV x${qty}`, total, bought);
-    setMsg("ctvMsg", true, "Mua thành công: " + bought.join(", "));
+    document.getElementById(qtyId).value = "";
+    updateCalc();
+    saveState();
+    render();
+    showMsg(msgId, true, `Mua thành công ${qty} key (${total.toLocaleString("vi-VN")}đ).`);
   }
 
   function adminAddBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
-    const amt = Number(document.getElementById("balanceAmount").value || 0);
-    if (!db.users[target] || !amt) return setMsg("adminBalMsg", false, "Nhập đúng tên tài khoản và số tiền khác 0.");
-    db.users[target].balance += amt;
-    saveDb();
-    renderAll();
-    setMsg("adminBalMsg", true, `Đã +${amt.toLocaleString("vi-VN")}đ cho ${target}.`);
+    const amt = Number(document.getElementById("addBalanceInput").value || 0);
+    if (!state.users[target] || !amt) return showMsg("adminBalMsg", false, "Nhập đúng tên tài khoản và số tiền khác 0.");
+    state.users[target].balance += amt;
+    saveState();
+    render();
+    showMsg("adminBalMsg", true, `Đã +${amt.toLocaleString("vi-VN")}đ cho ${target}.`);
   }
 
   function adminClearBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
-    if (!db.users[target]) return setMsg("adminBalMsg", false, "Không tìm thấy tài khoản.");
-    db.users[target].balance = 0;
-    saveDb();
-    renderAll();
-    setMsg("adminBalMsg", true, `Đã xóa số dư của ${target} về 0đ.`);
+    if (!state.users[target]) return showMsg("adminBalMsg", false, "Không tìm thấy tài khoản.");
+    state.users[target].balance = 0;
+    saveState();
+    render();
+    showMsg("adminBalMsg", true, `Đã xóa số dư của ${target} về 0đ.`);
   }
 
-  function adminCreatePkg() {
+  function adminImportKeys(pool) {
     if (!isAdmin()) return;
-    const name = document.getElementById("newPkgName").value.trim();
-    const price = Number(document.getElementById("newPkgPrice").value || 0);
-    if (!name || price <= 0) return setMsg("adminPkgMsg", false, "Nhập tên bảng giá và giá > 0.");
-    const id = "pkg_" + Date.now();
-    db.packages.push({ id, name, price });
-    db.keys[id] = [];
-    if (!selectedPkgId) selectedPkgId = id;
-    document.getElementById("newPkgName").value = "";
-    document.getElementById("newPkgPrice").value = "";
-    saveDb();
-    renderAll();
-    document.getElementById("adminPkgSelect").value = id;
-    renderAdminPkgStock();
-    setMsg("adminPkgMsg", true, `Đã tạo bảng giá "${name}".`);
-  }
-
-  function adminDeletePkg() {
-    if (!isAdmin()) return;
-    const pkgId = document.getElementById("adminPkgSelect").value;
-    if (!pkgId) return setMsg("adminPkgMsg", false, "Chưa chọn bảng giá để xóa.");
-    db.packages = db.packages.filter(function (p) { return p.id !== pkgId; });
-    delete db.keys[pkgId];
-    if (selectedPkgId === pkgId) selectedPkgId = db.packages[0] ? db.packages[0].id : "";
-    saveDb();
-    renderAll();
-    setMsg("adminPkgMsg", true, "Đã xóa bảng giá và kho key của gói.");
-  }
-
-  function adminImportPkgKeys() {
-    if (!isAdmin()) return;
-    const pkgId = document.getElementById("adminPkgSelect").value;
-    if (!pkgId) return setMsg("adminPkgMsg", false, "Chưa chọn bảng giá.");
-    const lines = document.getElementById("importPkgKeysArea").value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!lines.length) return setMsg("adminPkgMsg", false, "Nhập ít nhất 1 key.");
-    db.keys[pkgId] = (db.keys[pkgId] || []).concat(lines);
-    document.getElementById("importPkgKeysArea").value = "";
-    saveDb();
-    renderAll();
-    document.getElementById("adminPkgSelect").value = pkgId;
-    renderAdminPkgStock();
-    setMsg("adminPkgMsg", true, `Đã nhập ${lines.length} key vào kho.`);
-  }
-
-  function adminTakePkgKeys() {
-    if (!isAdmin()) return;
-    const pkgId = document.getElementById("adminPkgSelect").value;
-    const count = Math.max(1, Math.floor(Number(document.getElementById("takeKeyCount").value || 1)));
-    const stock = db.keys[pkgId] || [];
-    if (!pkgId) return setMsg("adminPkgMsg", false, "Chưa chọn bảng giá.");
-    if (stock.length < count) return setMsg("adminPkgMsg", false, `Kho chỉ còn ${stock.length} key.`);
-    const taken = stock.splice(0, count);
-    const box = document.getElementById("takenKeysBox");
-    box.style.display = "block";
-    box.textContent = "Key đã lấy ra:\n" + taken.join("\n");
-    saveDb();
-    renderAll();
-    document.getElementById("adminPkgSelect").value = pkgId;
-    renderAdminPkgStock();
-    setMsg("adminPkgMsg", true, `Đã lấy ${taken.length} key ra khỏi kho.`);
-  }
-
-  function deletePkgSingleKey(pkgId, idx) {
-    if (!isAdmin()) return;
-    (db.keys[pkgId] || []).splice(idx, 1);
-    saveDb();
-    renderAll();
-    document.getElementById("adminPkgSelect").value = pkgId;
-    renderAdminPkgStock();
-  }
-
-  function adminImportPool(pool, areaId) {
-    if (!isAdmin()) return;
+    const areaId = pool === "ctv" ? "importCtvArea" : "importNonCtvArea";
     const lines = document.getElementById(areaId).value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!lines.length) return setMsg("adminPoolMsg", false, "Nhập ít nhất 1 key.");
-    db.keys[pool] = (db.keys[pool] || []).concat(lines);
+    if (!lines.length) return;
+    state.keys[pool] = (state.keys[pool] || []).concat(lines);
     document.getElementById(areaId).value = "";
-    saveDb();
-    renderAll();
-    setMsg("adminPoolMsg", true, `Đã nhập ${lines.length} key.`);
+    saveState();
+    render();
   }
 
-  function deletePoolSingleKey(pool, idx) {
+  function adminDeleteKey(pool, idx) {
     if (!isAdmin()) return;
-    (db.keys[pool] || []).splice(idx, 1);
-    saveDb();
-    renderAll();
+    state.keys[pool].splice(idx, 1);
+    saveState();
+    render();
   }
 
-  function renderPkgGrid() {
-    const grid = document.getElementById("pkgGrid");
-    if (!db.packages.length) {
-      grid.innerHTML = `<div style="grid-column:1/-1; font-size:13px; color:#94a3b8;">Chưa có bảng giá key nào.</div>`;
+  function renderAdminKeyList(pool, elId) {
+    const list = state.keys[pool] || [];
+    const el = document.getElementById(elId);
+    if (!list.length) {
+      el.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho trống.</div>`;
       return;
     }
-    grid.innerHTML = db.packages.map(function (p) {
-      const cnt = (db.keys[p.id] || []).length;
-      return `<div class="pkg-tile ${p.id === selectedPkgId ? "selected" : ""}" onclick="selectPkg('${p.id}')">
-        <div class="pkg-name">${p.name}</div>
-        <div class="pkg-price">${p.price.toLocaleString("vi-VN")}đ</div>
-        <div class="pkg-stock">Kho: ${cnt} key</div>
-      </div>`;
+    el.innerHTML = list.map(function (k, i) {
+      return `<div class="key-row"><span class="key-code">${k}</span><button class="red small" onclick="adminDeleteKey('${pool}', ${i})">Xóa</button></div>`;
     }).join("");
   }
 
-  function renderAdminPkgStock() {
-    const sel = document.getElementById("adminPkgSelect");
-    const listEl = document.getElementById("adminPkgKeysList");
-    const pkgId = sel.value;
-    if (!pkgId) {
-      listEl.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Chưa có bảng giá.</div>`;
-      return;
-    }
-    const stock = db.keys[pkgId] || [];
-    if (!stock.length) {
-      listEl.innerHTML = `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho bảng giá này hiện còn 0 key.</div>`;
-      return;
-    }
-    listEl.innerHTML = stock.map(function (k, i) {
-      return `<div class="key-row">
-        <span style="font-family:monospace; color:#4ade80;">${k}</span>
-        <button class="red small" onclick="deletePkgSingleKey('${pkgId}', ${i})">Xóa</button>
-      </div>`;
-    }).join("");
-  }
-
-  function renderAll() {
-    const u = getUser();
-    document.getElementById("userTitle").textContent = u ? u.username : "Khách (Chưa đăng nhập)";
-    document.getElementById("roleBadge").textContent = !u ? "Khách xem key" : (u.isAdmin ? "Admin" : "Thành viên");
-    document.getElementById("roleBadge").className = "badge" + (u && u.isAdmin ? " admin" : "");
-    document.getElementById("ctvBadge").style.display = u && (u.isCtv || u.isAdmin) ? "inline-block" : "none";
-    document.getElementById("btnShowAuth").style.display = u ? "none" : "inline-block";
+  function render() {
+    const u = currentUser();
+    document.getElementById("userLabel").textContent = u ? `${u.username}${u.isAdmin ? " (Admin)" : ""}` : "Khách (Chưa đăng nhập)";
+    document.getElementById("balanceLabel").textContent = (u ? u.balance : 0).toLocaleString("vi-VN") + "đ";
+    document.getElementById("btnOpenAuth").style.display = u ? "none" : "inline-block";
     document.getElementById("btnLogout").style.display = u ? "inline-block" : "none";
-    document.getElementById("tab_admin").style.display = u && u.isAdmin ? "inline-block" : "none";
+    document.getElementById("adminPanel").style.display = u && u.isAdmin ? "block" : "none";
 
-    const myOrders = u ? db.orders.filter(function (o) { return o.buyer === u.username; }) : [];
-    const totalKeys = myOrders.reduce(function (sum, o) { return sum + o.keys.length; }, 0);
-    document.getElementById("statBalance").textContent = (u ? u.balance : 0).toLocaleString("vi-VN") + "đ";
-    document.getElementById("statKeysCount").textContent = totalKeys;
+    document.getElementById("nonCtvStockBadge").textContent = "Kho không CTV: " + (state.keys.non_ctv || []).length + " key";
+    document.getElementById("ctvStockBadge").textContent = "Kho CTV: " + (state.keys.ctv || []).length + " key";
 
-    document.getElementById("nonCtvBadge").textContent = "Kho sỉ: " + (db.keys.non_ctv || []).length + " key";
-    document.getElementById("ctvStockBadge").textContent = "Kho CTV: " + (db.keys.ctv || []).length + " key";
-
-    renderPkgGrid();
-    updatePkgSummary();
-
-    const myOrdersEl = document.getElementById("myOrdersList");
+    const ordersBox = document.getElementById("myOrdersBox");
     if (!u) {
-      myOrdersEl.innerHTML = "Vui lòng đăng nhập để xem key của bạn.";
-    } else if (!myOrders.length) {
-      myOrdersEl.innerHTML = "Chưa có đơn hàng nào.";
+      ordersBox.innerHTML = "Vui lòng đăng nhập để xem key đã mua.";
     } else {
-      myOrdersEl.innerHTML = myOrders.map(function (o) {
+      const mine = state.orders.filter(function (o) { return o.buyer === u.username; });
+      ordersBox.innerHTML = mine.length ? mine.map(function (o) {
         return `<div class="item">
-          <div class="row-flex"><b>${o.title}</b><div style="text-align:right; color:#facc15; font-weight:700;">${o.total.toLocaleString("vi-VN")}đ</div></div>
-          <div style="font-size:12px; color:#94a3b8;">${o.createdAt}</div>
+          <div style="display:flex; justify-content:space-between; gap:8px;"><b>${o.title}</b><span style="color:#facc15; font-weight:700;">${o.total.toLocaleString("vi-VN")}đ</span></div>
+          <div style="font-size:12px; color:#94a3b8;">${o.time}</div>
           <div class="key-box">${o.keys.join("\n")}</div>
         </div>`;
-      }).join("");
+      }).join("") : "Chưa có key nào.";
     }
 
     if (u && u.isAdmin) {
-      document.getElementById("adminUsersList").innerHTML = Object.values(db.users).map(function (usr) {
-        return `<div class="item"><b>${usr.username}</b> • Số dư: <b style="color:#4ade80;">${usr.balance.toLocaleString("vi-VN")}đ</b> • Admin: <b>${usr.isAdmin ? "Có" : "Không"}</b></div>`;
+      document.getElementById("adminUsersList").innerHTML = Object.values(state.users).map(function (usr) {
+        return `<div class="item"><b>${usr.username}</b> • Số dư: <b style="color:#4ade80;">${usr.balance.toLocaleString("vi-VN")}đ</b></div>`;
       }).join("");
-
-      const sel = document.getElementById("adminPkgSelect");
-      const prevVal = sel.value;
-      sel.innerHTML = db.packages.length
-        ? db.packages.map(function (p) { return `<option value="${p.id}">${p.name} (${p.price.toLocaleString("vi-VN")}đ) - ${(db.keys[p.id] || []).length} key</option>`; }).join("")
-        : `<option value="">-- Chưa có bảng giá --</option>`;
-      if (prevVal && Array.from(sel.options).some(function (o) { return o.value === prevVal; })) sel.value = prevVal;
-      renderAdminPkgStock();
-
-      const nonCtvList = (db.keys.non_ctv || []).map(function (k, i) {
-        return `<div class="key-row"><span style="font-family:monospace; color:#38bdf8;">[Sỉ] ${k}</span><button class="red small" onclick="deletePoolSingleKey('non_ctv', ${i})">Xóa</button></div>`;
-      }).join("");
-      const ctvList = (db.keys.ctv || []).map(function (k, i) {
-        return `<div class="key-row"><span style="font-family:monospace; color:#fbbf24;">[CTV] ${k}</span><button class="red small" onclick="deletePoolSingleKey('ctv', ${i})">Xóa</button></div>`;
-      }).join("");
-      document.getElementById("adminPoolList").innerHTML = (nonCtvList + ctvList) || `<div style="font-size:12.5px; color:#94a3b8; margin-top:6px;">Kho sỉ và CTV trống.</div>`;
+      renderAdminKeyList("non_ctv", "adminNonCtvList");
+      renderAdminKeyList("ctv", "adminCtvList");
     }
   }
 
-  renderAll();
+  render();
 </script>
 </body>
 </html>
