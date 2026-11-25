@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NoteFlow - Ghi Chú & Công Việc</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #0b1020; color: #f1f5f9; padding: 16px; }
+    .container { max-width: 720px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .stats { font-size: 13px; color: #94a3b8; }
+    .card { background: #131b31; border: 1px solid #24304f; border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+    input, textarea, select, button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #2b3a60; font-size: 14px; }
+    input, textarea, select { background: #0c1222; color: #f8fafc; margin-bottom: 10px; }
+    button { background: #3b82f6; color: #fff; font-weight: 700; border: none; cursor: pointer; }
+    button:hover { opacity: 0.92; }
+    button.secondary { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; width: auto; }
+    button.danger { background: #dc2626; width: auto; padding: 7px 11px; font-size: 12.5px; }
+    button.success { background: #16a34a; width: auto; padding: 7px 11px; font-size: 12.5px; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 520px) { .row-2 { grid-template-columns: 1fr; } }
+
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .toolbar input { flex: 1; min-width: 180px; margin-bottom: 0; }
+    .filter-btn { width: auto; padding: 8px 12px; font-size: 13px; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .filter-btn.active { background: #2563eb; color: #fff; border-color: #3b82f6; }
+
+    .note-item { background: #0c1222; border: 1px solid #222e4c; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .note-item.done { opacity: 0.65; }
+    .note-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .note-title { font-weight: 700; font-size: 15px; word-break: break-word; }
+    .note-item.done .note-title { text-decoration: line-through; color: #94a3b8; }
+    .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 700; white-space: nowrap; }
+    .badge.normal { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .badge.important { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
+    .note-body { margin: 8px 0; font-size: 13.5px; color: #cbd5e1; white-space: pre-line; word-break: break-word; }
+    .note-footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .note-time { font-size: 11.5px; color: #64748b; }
+    .note-actions { display: flex; gap: 6px; }
+    .empty { text-align: center; color: #94a3b8; padding: 24px 12px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>📝 NoteFlow</h1>
+        <div id="statsText" class="stats">0 ghi chú • 0 hoàn thành</div>
+      </div>
+      <button class="secondary" onclick="clearCompleted()">Xóa mục đã xong</button>
+    </div>
+
+    <div class="card">
+      <input id="titleInput" type="text" placeholder="Tiêu đề ghi chú hoặc công việc..." />
+      <textarea id="contentInput" rows="3" placeholder="Nội dung chi tiết..."></textarea>
+      <div class="row-2">
+        <select id="prioritySelect">
+          <option value="normal">Mức độ: Thường</option>
+          <option value="important">Mức độ: Quan trọng</option>
+        </select>
+        <button onclick="addNote()">+ Thêm ghi chú</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input id="searchInput" type="text" placeholder="Tìm kiếm ghi chú..." oninput="renderNotes()" />
+      <button id="f_all" class="filter-btn active" onclick="setFilter('all')">Tất cả</button>
+      <button id="f_active" class="filter-btn" onclick="setFilter('active')">Đang làm</button>
+      <button id="f_done" class="filter-btn" onclick="setFilter('done')">Hoàn thành</button>
+    </div>
+
+    <div id="notesList"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "noteflow_items_v1";
+    let notes = [];
+    let currentFilter = "all";
+
+    function loadNotes() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        notes = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(notes)) notes = [];
+      } catch (e) {
+        notes = [];
+      }
+    }
+
+    function saveNotes() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+    }
+
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function addNote() {
+      const titleEl = document.getElementById("titleInput");
+      const contentEl = document.getElementById("contentInput");
+      const priorityEl = document.getElementById("prioritySelect");
+
+      const title = titleEl.value.trim();
+      const content = contentEl.value.trim();
+      if (!title && !content) {
+        alert("Nhập tiêu đề hoặc nội dung trước khi thêm.");
+        return;
+      }
+
+      notes.unshift({
+        id: String(Date.now()) + "_" + Math.random().toString(36).slice(2, 7),
+        title: title || "Không có tiêu đề",
+        content: content,
+        priority: priorityEl.value === "important" ? "important" : "normal",
+        done: false,
+        createdAt: new Date().toLocaleString("vi-VN")
+      });
+
+      saveNotes();
+      titleEl.value = "";
+      contentEl.value = "";
+      priorityEl.value = "normal";
+      renderNotes();
+    }
+
+    function toggleDone(id) {
+      notes = notes.map(function (item) {
+        if (item.id === id) return Object.assign({}, item, { done: !item.done });
+        return item;
+      });
+      saveNotes();
+      renderNotes();
+    }
+
+    function deleteNote(id) {
+      notes = notes.filter(function (item) { return item.id !== id; });
+      saveNotes();
+      renderNotes();
+    }
+
+    function clearCompleted() {
+      const hasDone = notes.some(function (item) { return item.done; });
+      if (!hasDone) return;
+      if (!confirm("Xóa tất cả ghi chú đã hoàn thành?")) return;
+      notes = notes.filter(function (item) { return !item.done; });
+      saveNotes();
+      renderNotes();
+    }
+
+    function setFilter(filterName) {
+      currentFilter = filterName;
+      ["all", "active", "done"].forEach(function (name) {
+        const btn = document.getElementById("f_" + name);
+        if (btn) btn.classList.toggle("active", name === filterName);
+      });
+      renderNotes();
+    }
+
+    function renderNotes() {
+      const listEl = document.getElementById("notesList");
+      const statsEl = document.getElementById("statsText");
+      const kw = document.getElementById("searchInput").value.trim().toLowerCase();
+
+      const doneCount = notes.filter(function (n) { return n.done; }).length;
+      statsEl.textContent = notes.length + " ghi chú • " + doneCount + " hoàn thành";
+
+      const filtered = notes.filter(function (n) {
+        if (currentFilter === "active" && n.done) return false;
+        if (currentFilter === "done" && !n.done) return false;
+        if (!kw) return true;
+        return n.title.toLowerCase().includes(kw) || n.content.toLowerCase().includes(kw);
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="card empty">Chưa có ghi chú phù hợp.</div>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(function (n) {
+        const badgeClass = n.priority === "important" ? "badge important" : "badge normal";
+        const badgeText = n.priority === "important" ? "Quan trọng" : "Thường";
+        return `
+          <div class="note-item ${n.done ? "done" : ""}">
+            <div class="note-top">
+              <div class="note-title">${escapeHtml(n.title)}</div>
+              <span class="${badgeClass}">${badgeText}</span>
+            </div>
+            ${n.content ? `<div class="note-body">${escapeHtml(n.content)}</div>` : ""}
+            <div class="note-footer">
+              <span class="note-time">🕒 ${escapeHtml(n.createdAt)}</span>
+              <div class="note-actions">
+                <button class="success" onclick="toggleDone('${n.id}')">${n.done ? "Làm lại" : "Hoàn thành"}</button>
+                <button class="danger" onclick="deleteNote('${n.id}')">Xóa</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    loadNotes();
+    renderNotes();
+  </script>
+</body>
+</html>
