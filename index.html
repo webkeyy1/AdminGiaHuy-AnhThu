@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Key & CTV</title>
+  <title>Shop Key & CTV (Đồng Bộ Online)</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
@@ -26,6 +26,7 @@
     .pill { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); white-space: nowrap; }
     .pill.admin { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.4); }
     .pill.ctv { background: rgba(74, 222, 128, 0.14); color: #4ade80; border-color: rgba(74, 222, 128, 0.35); }
+    .pill.warn { background: rgba(248, 113, 113, 0.14); color: #f87171; border-color: rgba(248, 113, 113, 0.38); }
 
     .head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
     .calc-text { font-size: 14px; color: #cbd5e1; margin: 4px 0 10px; }
@@ -49,6 +50,22 @@
 </head>
 <body>
 <div class="wrap">
+
+  <div class="card">
+    <div class="head-row" style="margin-bottom:4px;">
+      <div style="font-weight:800; font-size:14px;">Kết Nối Kho Chung (Đa Thiết Bị)</div>
+      <span id="syncStatusBadge" class="pill warn">Chưa gắn DB</span>
+    </div>
+    <div style="font-size:12.5px; color:#94a3b8;">
+      Dán link Firebase Realtime Database để máy Admin nhập key thì máy khác thấy ngay:
+    </div>
+    <div class="row-3" style="margin-top:6px;">
+      <input id="dbUrlInput" type="text" placeholder="https://ten-project-default-rtdb.firebaseio.com" style="margin:0;" />
+      <button class="green small" style="padding:10px 14px;" onclick="saveDbUrlAndSync()">Lưu & Tải</button>
+      <button class="dark small" style="padding:10px 14px;" onclick="syncFromCloud(true)">Làm mới</button>
+    </div>
+    <div id="dbMsg" class="msg"></div>
+  </div>
 
   <div class="card topbar">
     <div>
@@ -202,12 +219,15 @@
 
 </div>
 <script>
-  const STORAGE_KEY = "shop_key_ctv_control_v1";
+  const DEFAULT_DB_URL = "";
+  const DB_URL_STORAGE = "shop_key_firebase_rtdb_url_v1";
+  const LOCAL_CACHE_KEY = "shop_key_local_cache_v1";
+
   let lastTakenPkgKeys = "";
   let lastTakenCtvKeys = "";
+  let isSyncing = false;
 
   const defaultState = {
-    currentUser: null,
     ctvPrice: 5000,
     users: {
       admingiahuy: { username: "admingiahuy", password: "123", balance: 100000, isAdmin: true, isCtv: true },
@@ -222,36 +242,119 @@
     purchases: []
   };
 
-  let state = loadState();
+  function normalizeState(parsed) {
+    const base = structuredClone(defaultState);
+    if (!parsed || typeof parsed !== "object") return base;
+    const mergedUsers = Object.assign({}, base.users, parsed.users || {});
+    mergedUsers.admingiahuy = Object.assign(
+      { username: "admingiahuy", password: "123", balance: 100000, isCtv: true },
+      mergedUsers.admingiahuy || {},
+      { isAdmin: true }
+    );
+    mergedUsers.adminanhthu = Object.assign(
+      { username: "adminanhthu", password: "123", balance: 100000, isCtv: true },
+      mergedUsers.adminanhthu || {},
+      { isAdmin: true }
+    );
+    return {
+      ctvPrice: Number(parsed.ctvPrice || 5000) > 0 ? Number(parsed.ctvPrice) : 5000,
+      users: mergedUsers,
+      orderItems: Array.isArray(parsed.orderItems) ? parsed.orderItems : base.orderItems,
+      ctvKeys: Array.isArray(parsed.ctvKeys) ? parsed.ctvKeys : base.ctvKeys,
+      purchases: Array.isArray(parsed.purchases) ? parsed.purchases : []
+    };
+  }
 
-  function loadState() {
+  let currentSessionUser = sessionStorage.getItem("shop_key_session_user") || null;
+  let state = loadLocalCache();
+
+  function loadLocalCache() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(LOCAL_CACHE_KEY);
       if (!raw) return structuredClone(defaultState);
-      const parsed = JSON.parse(raw);
-      const mergedUsers = Object.assign({}, structuredClone(defaultState.users), parsed.users || {});
-      mergedUsers.admingiahuy = Object.assign({ username: "admingiahuy", password: "123", balance: 100000, isCtv: true }, mergedUsers.admingiahuy || {}, { isAdmin: true });
-      mergedUsers.adminanhthu = Object.assign({ username: "adminanhthu", password: "123", balance: 100000, isCtv: true }, mergedUsers.adminanhthu || {}, { isAdmin: true });
-      return {
-        currentUser: parsed.currentUser || null,
-        ctvPrice: Number(parsed.ctvPrice || 5000) > 0 ? Number(parsed.ctvPrice) : 5000,
-        users: mergedUsers,
-        orderItems: Array.isArray(parsed.orderItems) ? parsed.orderItems : structuredClone(defaultState.orderItems),
-        ctvKeys: Array.isArray(parsed.ctvKeys) ? parsed.ctvKeys : structuredClone(defaultState.ctvKeys),
-        purchases: Array.isArray(parsed.purchases) ? parsed.purchases : []
-      };
+      return normalizeState(JSON.parse(raw));
     } catch (e) {
       return structuredClone(defaultState);
     }
   }
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function getDbUrl() {
+    return (localStorage.getItem(DB_URL_STORAGE) || DEFAULT_DB_URL || "").trim().replace(/\/+$/, "");
+  }
+
+  function setSyncBadge(mode, label) {
+    const el = document.getElementById("syncStatusBadge");
+    if (!el) return;
+    el.className = "pill " + mode;
+    el.textContent = label;
+  }
+
+  async function saveState() {
+    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+    const dbUrl = getDbUrl();
+    if (!dbUrl) {
+      setSyncBadge("warn", "Chỉ lưu máy này");
+      return;
+    }
+    try {
+      setSyncBadge("ctv", "Đang lưu kho...");
+      const res = await fetch(dbUrl + "/shop_data.json", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state)
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setSyncBadge("ctv", "Đã đồng bộ DB");
+    } catch (e) {
+      setSyncBadge("warn", "Lỗi lưu DB");
+      showMsg("dbMsg", false, "Không lưu được lên Firebase DB. Kiểm tra link DB hoặc Rules.");
+    }
+  }
+
+  async function syncFromCloud(showNotice) {
+    const dbUrl = getDbUrl();
+    document.getElementById("dbUrlInput").value = dbUrl;
+    if (!dbUrl) {
+      setSyncBadge("warn", "Chưa gắn DB");
+      if (showNotice) showMsg("dbMsg", false, "Chưa nhập link Firebase Realtime Database.");
+      return;
+    }
+    if (isSyncing) return;
+    isSyncing = true;
+    try {
+      setSyncBadge("admin", "Đang tải kho...");
+      const res = await fetch(dbUrl + "/shop_data.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (data && typeof data === "object") {
+        state = normalizeState(data);
+        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+      } else {
+        await saveState();
+      }
+      setSyncBadge("ctv", "Đã đồng bộ DB");
+      render();
+      if (showNotice) showMsg("dbMsg", true, "Đã cập nhật dữ liệu mới nhất từ kho chung!");
+    } catch (e) {
+      setSyncBadge("warn", "Lỗi tải DB");
+      if (showNotice) showMsg("dbMsg", false, "Không tải được dữ liệu từ DB. Kiểm tra link hoặc Rules.");
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  async function saveDbUrlAndSync() {
+    const raw = document.getElementById("dbUrlInput").value.trim().replace(/\/+$/, "");
+    if (!raw || !raw.startsWith("https://")) {
+      return showMsg("dbMsg", false, "Nhập link hợp lệ bắt đầu bằng https://");
+    }
+    localStorage.setItem(DB_URL_STORAGE, raw);
+    await syncFromCloud(true);
   }
 
   function currentUser() {
-    if (!state.currentUser || !state.users[state.currentUser]) return null;
-    return state.users[state.currentUser];
+    if (!currentSessionUser || !state.users[currentSessionUser]) return null;
+    return state.users[currentSessionUser];
   }
 
   function isAdmin() {
@@ -290,7 +393,7 @@
     }
   }
 
-  function changePassword() {
+  async function changePassword() {
     const u = currentUser();
     if (!u) return;
     const oldPass = document.getElementById("oldPassInp").value;
@@ -299,40 +402,44 @@
     if (u.password !== oldPass) return showMsg("changePassMsg", false, "Mật khẩu hiện tại không đúng.");
     if (!newPass || newPass.length < 3) return showMsg("changePassMsg", false, "Mật khẩu mới phải từ 3 ký tự trở lên.");
     u.password = newPass;
-    saveState();
     document.getElementById("oldPassInp").value = "";
     document.getElementById("newPassInp").value = "";
+    await saveState();
+    render();
     showMsg("changePassMsg", true, "Đổi mật khẩu thành công!");
   }
 
-  function register() {
+  async function register() {
+    await syncFromCloud(false);
     const name = document.getElementById("uName").value.trim().toLowerCase();
     const pass = document.getElementById("uPass").value;
     if (!name || pass.length < 3) return showMsg("authMsg", false, "Nhập tên tài khoản và mật khẩu (>= 3 ký tự).");
     if (state.users[name]) return showMsg("authMsg", false, "Tài khoản đã tồn tại.");
     const grantAdmin = name === "admingiahuy" || name === "adminanhthu";
     state.users[name] = { username: name, password: pass, balance: 0, isAdmin: grantAdmin, isCtv: grantAdmin };
-    state.currentUser = name;
-    saveState();
+    currentSessionUser = name;
+    sessionStorage.setItem("shop_key_session_user", name);
+    await saveState();
     document.getElementById("authBox").style.display = "none";
     render();
   }
 
-  function login() {
+  async function login() {
+    await syncFromCloud(false);
     const name = document.getElementById("uName").value.trim().toLowerCase();
     const pass = document.getElementById("uPass").value;
     const u = state.users[name];
     if (!u || u.password !== pass) return showMsg("authMsg", false, "Sai tên tài khoản hoặc mật khẩu.");
-    state.currentUser = name;
-    saveState();
+    currentSessionUser = name;
+    sessionStorage.setItem("shop_key_session_user", name);
     document.getElementById("authBox").style.display = "none";
     render();
   }
 
   function logout() {
-    state.currentUser = null;
+    currentSessionUser = null;
+    sessionStorage.removeItem("shop_key_session_user");
     document.getElementById("changePassBox").style.display = "none";
-    saveState();
     render();
   }
 
@@ -362,7 +469,8 @@
     document.getElementById("ctvTotalMoney").textContent = (Number(state.ctvPrice || 0) * qty).toLocaleString("vi-VN") + "đ";
   }
 
-  function buySelectedOrderItem() {
+  async function buySelectedOrderItem() {
+    await syncFromCloud(false);
     const u = currentUser();
     if (!u) {
       document.getElementById("authBox").style.display = "block";
@@ -394,12 +502,13 @@
       time: new Date().toLocaleString("vi-VN")
     });
 
-    saveState();
+    await saveState();
     render();
     showMsg("shopBuyMsg", true, `Mua thành công ${qty} key "${item.name}"!`);
   }
 
-  function buyCtvKeys() {
+  async function buyCtvKeys() {
+    await syncFromCloud(false);
     const u = currentUser();
     if (!u) {
       document.getElementById("authBox").style.display = "block";
@@ -431,12 +540,12 @@
       time: new Date().toLocaleString("vi-VN")
     });
 
-    saveState();
+    await saveState();
     render();
     showMsg("ctvBuyMsg", true, `Mua thành công ${qty} key CTV!`);
   }
 
-  function adminAddBalance() {
+  async function adminAddBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
     const amt = Number(document.getElementById("balanceDelta").value || 0);
@@ -444,24 +553,24 @@
       return showMsg("adminBalMsg", false, "Nhập đúng tên tài khoản và số tiền khác 0.");
     }
     state.users[target].balance = Number(state.users[target].balance || 0) + amt;
-    saveState();
+    await saveState();
     render();
     showMsg("adminBalMsg", true, `Đã +${amt.toLocaleString("vi-VN")}đ cho ${target}.`);
   }
 
-  function adminClearBalance() {
+  async function adminClearBalance() {
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
     if (!state.users[target]) {
       return showMsg("adminBalMsg", false, "Không tìm thấy tài khoản.");
     }
     state.users[target].balance = 0;
-    saveState();
+    await saveState();
     render();
     showMsg("adminBalMsg", true, `Đã xóa số dư của ${target} về 0đ.`);
   }
 
-  function adminSetCtv(enableCtv) {
+  async function adminSetCtv(enableCtv) {
     if (!isAdmin()) return;
     const target = document.getElementById("ctvTargetUser").value.trim().toLowerCase();
     if (!target || !state.users[target]) {
@@ -469,12 +578,20 @@
     }
     state.users[target].isCtv = Boolean(enableCtv);
     document.getElementById("ctvTargetUser").value = "";
-    saveState();
+    await saveState();
     render();
     showMsg("adminCtvMemberMsg", true, enableCtv ? `Đã thêm "${target}" làm CTV.` : `Đã gỡ quyền CTV của "${target}".`);
   }
 
-  function adminCreateOrderItem() {
+  async function adminSetCtvForUser(username, enableCtv) {
+    if (!isAdmin() || !state.users[username]) return;
+    state.users[username].isCtv = Boolean(enableCtv);
+    await saveState();
+    render();
+    showMsg("adminCtvMemberMsg", true, `Đã gỡ quyền CTV của "${username}".`);
+  }
+
+  async function adminCreateOrderItem() {
     if (!isAdmin()) return;
     const name = document.getElementById("newOrderName").value.trim();
     const price = Number(document.getElementById("newOrderPrice").value || 0);
@@ -485,7 +602,7 @@
     state.orderItems.push({ id: newId, name: name, price: price, keys: [] });
     document.getElementById("newOrderName").value = "";
     document.getElementById("newOrderPrice").value = "";
-    saveState();
+    await saveState();
     render();
     document.getElementById("shopOrderSelect").value = newId;
     document.getElementById("adminStockSelect").value = newId;
@@ -494,17 +611,17 @@
     showMsg("adminCreateMsg", true, `Đã tạo đơn hàng "${name}" (${price.toLocaleString("vi-VN")}đ).`);
   }
 
-  function adminRemoveOrderItem(itemId) {
+  async function adminRemoveOrderItem(itemId) {
     if (!isAdmin()) return;
     const item = getItemById(itemId);
     if (!item) return;
     state.orderItems = state.orderItems.filter(function (it) { return it.id !== itemId; });
-    saveState();
+    await saveState();
     render();
     showMsg("adminCreateMsg", true, `Đã gỡ đơn hàng "${item.name}".`);
   }
 
-  function adminImportKeys() {
+  async function adminImportKeys() {
     if (!isAdmin()) return;
     const item = getItemById(document.getElementById("adminStockSelect").value);
     if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để nhập key.");
@@ -516,14 +633,14 @@
 
     item.keys = (Array.isArray(item.keys) ? item.keys : []).concat(lines);
     document.getElementById("importKeysArea").value = "";
-    saveState();
+    await saveState();
     render();
     document.getElementById("adminStockSelect").value = item.id;
     renderAdminStockList();
     showMsg("adminStockMsg", true, `Đã nhập ${lines.length} key vào kho "${item.name}".`);
   }
 
-  function adminTakeKeys() {
+  async function adminTakeKeys() {
     if (!isAdmin()) return;
     const item = getItemById(document.getElementById("adminStockSelect").value);
     if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để lấy key.");
@@ -538,35 +655,35 @@
     outBox.style.display = "block";
     outBox.textContent = "Key đã lấy ra:\n" + lastTakenPkgKeys;
 
-    saveState();
+    await saveState();
     render();
     document.getElementById("adminStockSelect").value = item.id;
     renderAdminStockList();
     showMsg("adminStockMsg", true, `Đã lấy ${taken.length} key ra khỏi kho "${item.name}".`);
   }
 
-  function adminDeleteSingleKey(itemId, idx) {
+  async function adminDeleteSingleKey(itemId, idx) {
     if (!isAdmin()) return;
     const item = getItemById(itemId);
     if (!item || !Array.isArray(item.keys)) return;
     item.keys.splice(idx, 1);
-    saveState();
+    await saveState();
     render();
     document.getElementById("adminStockSelect").value = item.id;
     renderAdminStockList();
   }
 
-  function adminSaveCtvPrice() {
+  async function adminSaveCtvPrice() {
     if (!isAdmin()) return;
     const p = Number(document.getElementById("ctvUnitPriceInput").value || 0);
     if (!Number.isFinite(p) || p <= 0) return showMsg("adminCtvStockMsg", false, "Giá key CTV phải > 0.");
     state.ctvPrice = p;
-    saveState();
+    await saveState();
     render();
     showMsg("adminCtvStockMsg", true, `Đã cập nhật giá key CTV: ${p.toLocaleString("vi-VN")}đ/key.`);
   }
 
-  function adminImportCtvKeys() {
+  async function adminImportCtvKeys() {
     if (!isAdmin()) return;
     const lines = document.getElementById("importCtvKeysArea").value
       .split(/\r?\n/)
@@ -575,12 +692,12 @@
     if (!lines.length) return showMsg("adminCtvStockMsg", false, "Nhập ít nhất 1 key CTV.");
     state.ctvKeys = (Array.isArray(state.ctvKeys) ? state.ctvKeys : []).concat(lines);
     document.getElementById("importCtvKeysArea").value = "";
-    saveState();
+    await saveState();
     render();
     showMsg("adminCtvStockMsg", true, `Đã nhập ${lines.length} key vào kho CTV.`);
   }
 
-  function adminTakeCtvKeys() {
+  async function adminTakeCtvKeys() {
     if (!isAdmin()) return;
     const count = Math.max(1, Math.floor(Number(document.getElementById("takeCtvKeysQty").value || 1)));
     state.ctvKeys = Array.isArray(state.ctvKeys) ? state.ctvKeys : [];
@@ -593,15 +710,15 @@
     outBox.style.display = "block";
     outBox.textContent = "Key CTV đã lấy ra:\n" + lastTakenCtvKeys;
 
-    saveState();
+    await saveState();
     render();
     showMsg("adminCtvStockMsg", true, `Đã lấy ${taken.length} key CTV ra khỏi kho.`);
   }
 
-  function adminDeleteCtvKey(idx) {
+  async function adminDeleteCtvKey(idx) {
     if (!isAdmin()) return;
     state.ctvKeys.splice(idx, 1);
-    saveState();
+    await saveState();
     render();
   }
 
@@ -742,15 +859,8 @@
     }
   }
 
-  function adminSetCtvForUser(username, enableCtv) {
-    if (!isAdmin() || !state.users[username]) return;
-    state.users[username].isCtv = Boolean(enableCtv);
-    saveState();
-    render();
-    showMsg("adminCtvMemberMsg", true, `Đã gỡ quyền CTV của "${username}".`);
-  }
-
   render();
+  syncFromCloud(false);
 </script>
 </body>
 </html>
