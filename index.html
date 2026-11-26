@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Key & CTV (Tự Động Đồng Bộ)</title>
+  <title>Shop Key & CTV (Đồng Bộ Nhiều Máy)</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
@@ -50,27 +50,13 @@
 </head>
 <body>
 <div class="wrap">
-
-  <div class="card">
-    <div class="head-row" style="margin-bottom:4px;">
-      <div style="font-weight:800; font-size:14px;">Trạng Thái Kho Chung (Tự Đồng Bộ 3s/lần)</div>
-      <span id="syncStatusBadge" class="pill admin">Đang kết nối...</span>
-    </div>
-    <div style="font-size:12px; color:#94a3b8;">
-      Mọi máy đều tự cập nhật kho key & số dư chung. Có thể dán link Firebase riêng bên dưới nếu muốn:
-    </div>
-    <div class="row-3" style="margin-top:6px;">
-      <input id="dbUrlInput" type="text" placeholder="Link Firebase RTDB riêng (không bắt buộc)" style="margin:0;" />
-      <button class="green small" style="padding:10px 14px;" onclick="saveDbUrlAndSync()">Đổi DB</button>
-      <button class="dark small" style="padding:10px 14px;" onclick="syncFromCloud(true)">Tải ngay</button>
-    </div>
-    <div id="dbMsg" class="msg"></div>
-  </div>
-
   <div class="card topbar">
     <div>
-      <div id="userLabel" style="font-weight:800; font-size:15.5px;">Khách (Chưa đăng nhập)</div>
-      <div style="font-size:13px; color:#94a3b8; margin-top:3px;">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span id="userLabel" style="font-weight:800; font-size:15.5px;">Khách (Chưa đăng nhập)</span>
+        <span id="syncStatusBadge" class="pill admin" onclick="syncFromCloud(true)" style="cursor:pointer;" title="Bấm để đồng bộ ngay">Đang đồng bộ...</span>
+      </div>
+      <div style="font-size:13px; color:#94a3b8; margin-top:4px;">
         Số dư: <b id="balanceLabel" style="color:#4ade80;">0đ</b>
       </div>
     </div>
@@ -137,7 +123,6 @@
     <button class="amber" onclick="buyCtvKeys()">Mua Key CTV</button>
     <div id="ctvBuyMsg" class="msg"></div>
   </div>
-
   <div class="card">
     <h2 style="margin-bottom:8px;">Key Đã Mua</h2>
     <div id="myOrdersBox" style="font-size:13.5px; color:#94a3b8;">Vui lòng đăng nhập để xem key đã mua.</div>
@@ -219,17 +204,19 @@
 
 </div>
 <script>
-  const PUBLIC_CLOUD_STORE = "https://kvdb.io/A2k9mP7xLq4vR8wN3zT6yB/shop_giahuy_anhthu_v1";
-  const DB_URL_STORAGE = "shop_key_custom_db_url_v2";
-  const LOCAL_CACHE_KEY = "shop_key_local_cache_v2";
+  const FIREBASE_RTDB_URL = "";
+  const ROOM_ID = "webkeyy1_shop_shared_v3";
+  const LOCAL_CACHE_KEY = "shop_key_local_cache_v3";
 
   let lastTakenPkgKeys = "";
   let lastTakenCtvKeys = "";
   let isSyncing = false;
   let isSaving = false;
   let lastSyncedHash = "";
+  let activeCloudDriver = null;
 
   const defaultState = {
+    updatedAt: 0,
     ctvPrice: 5000,
     users: {
       admingiahuy: { username: "admingiahuy", password: "123", balance: 100000, isAdmin: true, isCtv: true },
@@ -259,11 +246,36 @@
       { isAdmin: true }
     );
     return {
+      updatedAt: Number(parsed.updatedAt || 0),
       ctvPrice: Number(parsed.ctvPrice || 5000) > 0 ? Number(parsed.ctvPrice) : 5000,
       users: mergedUsers,
       orderItems: Array.isArray(parsed.orderItems) ? parsed.orderItems : base.orderItems,
       ctvKeys: Array.isArray(parsed.ctvKeys) ? parsed.ctvKeys : base.ctvKeys,
       purchases: Array.isArray(parsed.purchases) ? parsed.purchases : []
+    };
+  }
+
+  function mergeStates(localSt, remoteSt) {
+    const a = normalizeState(localSt);
+    const b = normalizeState(remoteSt);
+    if (!b.updatedAt && !a.updatedAt) return b;
+    const newest = b.updatedAt >= a.updatedAt ? b : a;
+    const older = b.updatedAt >= a.updatedAt ? a : b;
+
+    const mergedUsers = Object.assign({}, older.users, newest.users);
+    Object.keys(older.users).forEach(function (uname) {
+      if (!newest.users[uname]) {
+        mergedUsers[uname] = older.users[uname];
+      }
+    });
+
+    return {
+      updatedAt: Math.max(a.updatedAt, b.updatedAt),
+      ctvPrice: newest.ctvPrice,
+      users: mergedUsers,
+      orderItems: newest.orderItems,
+      ctvKeys: newest.ctvKeys,
+      purchases: newest.purchases.length >= older.purchases.length ? newest.purchases : older.purchases
     };
   }
 
@@ -280,12 +292,76 @@
     }
   }
 
-  function getActiveEndpoint() {
-    const custom = (localStorage.getItem(DB_URL_STORAGE) || "").trim().replace(/\/+$/, "");
-    if (custom) {
-      return { url: custom + "/shop_data.json", method: "PUT", isCustom: true };
+  const cloudDrivers = [
+    {
+      name: "Firebase RTDB",
+      enabled: function () { return Boolean(FIREBASE_RTDB_URL && FIREBASE_RTDB_URL.startsWith("https://")); },
+      read: async function () {
+        const base = FIREBASE_RTDB_URL.replace(/\/+$/, "");
+        const res = await fetch(`${base}/${ROOM_ID}.json?t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await res.json();
+      },
+      write: async function (payloadObj) {
+        const base = FIREBASE_RTDB_URL.replace(/\/+$/, "");
+        const res = await fetch(`${base}/${ROOM_ID}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadObj)
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      }
+    },
+    {
+      name: "KeyValue.im",
+      enabled: function () { return true; },
+      read: async function () {
+        const res = await fetch(`https://keyvalue.im/api/v1/keyvalue/${ROOM_ID}/state?t=${Date.now()}`, { cache: "no-store" });
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const txt = await res.text();
+        if (!txt || txt === "null") return null;
+        return JSON.parse(txt);
+      },
+      write: async function (payloadObj) {
+        const res = await fetch(`https://keyvalue.im/api/v1/keyvalue/${ROOM_ID}/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadObj)
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      }
+    },
+    {
+      name: "KVDB",
+      enabled: function () { return true; },
+      read: async function () {
+        const res = await fetch(`https://kvdb.io/A2k9mP7xLq4vR8wN3zT6yB/${ROOM_ID}?t=${Date.now()}`, { cache: "no-store" });
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return await res.json();
+      },
+      write: async function (payloadObj) {
+        const res = await fetch(`https://kvdb.io/A2k9mP7xLq4vR8wN3zT6yB/${ROOM_ID}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadObj)
+        });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      }
     }
-    return { url: PUBLIC_CLOUD_STORE, method: "POST", isCustom: false };
+  ];
+
+  function getOrderedDrivers() {
+    const list = cloudDrivers.filter(function (d) { return d.enabled(); });
+    if (activeCloudDriver) {
+      const idx = list.findIndex(function (d) { return d.name === activeCloudDriver; });
+      if (idx > 0) {
+        const picked = list.splice(idx, 1)[0];
+        list.unshift(picked);
+      }
+    }
+    return list;
   }
 
   function setSyncBadge(mode, label) {
@@ -296,23 +372,30 @@
   }
 
   async function saveState() {
+    state.updatedAt = Date.now();
+    const normalized = normalizeState(state);
+    state = normalized;
     const serialized = JSON.stringify(state);
     localStorage.setItem(LOCAL_CACHE_KEY, serialized);
     lastSyncedHash = serialized;
-    const ep = getActiveEndpoint();
+
     isSaving = true;
+    setSyncBadge("admin", "Đang lưu...");
     try {
-      setSyncBadge("admin", "Đang lưu lên kho chung...");
-      const res = await fetch(ep.url, {
-        method: ep.method,
-        headers: { "Content-Type": "application/json" },
-        body: serialized
-      });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      setSyncBadge("ctv", ep.isCustom ? "Đã đồng bộ Firebase" : "Đã đồng bộ kho chung");
+      const drivers = getOrderedDrivers();
+      let savedOk = false;
+      for (const drv of drivers) {
+        try {
+          await drv.write(state);
+          activeCloudDriver = drv.name;
+          savedOk = true;
+          break;
+        } catch (err) {}
+      }
+      if (!savedOk) throw new Error("All drivers failed");
+      setSyncBadge("ctv", "Đã đồng bộ");
     } catch (e) {
-      setSyncBadge("warn", "Lỗi lưu kho chung");
-      showMsg("dbMsg", false, "Không lưu được lên mạng. Kiểm tra mạng hoặc thử dán link Firebase riêng.");
+      setSyncBadge("warn", "Lỗi lưu (thử lại)");
     } finally {
       isSaving = false;
     }
@@ -320,57 +403,43 @@
 
   async function syncFromCloud(showNotice) {
     if (isSyncing || isSaving) return;
-    const ep = getActiveEndpoint();
-    const customSaved = (localStorage.getItem(DB_URL_STORAGE) || "").trim();
-    if (document.getElementById("dbUrlInput").value !== customSaved && document.activeElement !== document.getElementById("dbUrlInput")) {
-      document.getElementById("dbUrlInput").value = customSaved;
-    }
     isSyncing = true;
     try {
-      const res = await fetch(ep.url + (ep.url.includes("?") ? "&" : "?") + "t=" + Date.now(), { cache: "no-store" });
-      if (res.status === 404 && !ep.isCustom) {
-        await saveState();
-        isSyncing = false;
-        return;
+      const drivers = getOrderedDrivers();
+      let remoteData = null;
+      let loadedOk = false;
+      for (const drv of drivers) {
+        try {
+          remoteData = await drv.read();
+          activeCloudDriver = drv.name;
+          loadedOk = true;
+          break;
+        } catch (err) {}
       }
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
-      if (data && typeof data === "object") {
-        const nextState = normalizeState(data);
-        const nextHash = JSON.stringify(nextState);
+      if (!loadedOk) throw new Error("All read drivers failed");
+
+      if (remoteData && typeof remoteData === "object") {
+        const merged = mergeStates(state, remoteData);
+        const nextHash = JSON.stringify(merged);
         if (nextHash !== lastSyncedHash) {
-          state = nextState;
+          state = merged;
           lastSyncedHash = nextHash;
           localStorage.setItem(LOCAL_CACHE_KEY, nextHash);
           render();
         }
+        if (Number(remoteData.updatedAt || 0) < Number(state.updatedAt || 0)) {
+          await saveState();
+        }
       } else {
         await saveState();
       }
-      setSyncBadge("ctv", ep.isCustom ? "Đã đồng bộ Firebase" : "Đã đồng bộ kho chung");
-      if (showNotice) showMsg("dbMsg", true, "Đã tải dữ liệu mới nhất từ kho chung!");
+      setSyncBadge("ctv", "Đã đồng bộ");
+      if (showNotice) render();
     } catch (e) {
-      setSyncBadge("warn", "Mất kết nối kho");
-      if (showNotice) showMsg("dbMsg", false, "Không tải được dữ liệu từ mạng.");
+      setSyncBadge("warn", "Mất đồng bộ");
     } finally {
       isSyncing = false;
     }
-  }
-
-  async function saveDbUrlAndSync() {
-    const raw = document.getElementById("dbUrlInput").value.trim().replace(/\/+$/, "");
-    if (!raw) {
-      localStorage.removeItem(DB_URL_STORAGE);
-      lastSyncedHash = "";
-      await syncFromCloud(true);
-      return;
-    }
-    if (!raw.startsWith("https://")) {
-      return showMsg("dbMsg", false, "Link phải bắt đầu bằng https://");
-    }
-    localStorage.setItem(DB_URL_STORAGE, raw);
-    lastSyncedHash = "";
-    await syncFromCloud(true);
   }
 
   function currentUser() {
@@ -464,7 +533,6 @@
     document.getElementById("changePassBox").style.display = "none";
     render();
   }
-
   function getItemById(id) {
     return state.orderItems.find(function (it) { return it.id === id; }) || null;
   }
