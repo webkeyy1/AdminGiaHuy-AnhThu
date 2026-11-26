@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Key & CTV (Đồng Bộ Online)</title>
+  <title>Shop Key & CTV (Tự Động Đồng Bộ)</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
     body { margin: 0; background: #090c14; color: #f8fafc; padding: 14px; }
@@ -53,16 +53,16 @@
 
   <div class="card">
     <div class="head-row" style="margin-bottom:4px;">
-      <div style="font-weight:800; font-size:14px;">Kết Nối Kho Chung (Đa Thiết Bị)</div>
-      <span id="syncStatusBadge" class="pill warn">Chưa gắn DB</span>
+      <div style="font-weight:800; font-size:14px;">Trạng Thái Kho Chung (Tự Đồng Bộ 3s/lần)</div>
+      <span id="syncStatusBadge" class="pill admin">Đang kết nối...</span>
     </div>
-    <div style="font-size:12.5px; color:#94a3b8;">
-      Dán link Firebase Realtime Database để máy Admin nhập key thì máy khác thấy ngay:
+    <div style="font-size:12px; color:#94a3b8;">
+      Mọi máy đều tự cập nhật kho key & số dư chung. Có thể dán link Firebase riêng bên dưới nếu muốn:
     </div>
     <div class="row-3" style="margin-top:6px;">
-      <input id="dbUrlInput" type="text" placeholder="https://ten-project-default-rtdb.firebaseio.com" style="margin:0;" />
-      <button class="green small" style="padding:10px 14px;" onclick="saveDbUrlAndSync()">Lưu & Tải</button>
-      <button class="dark small" style="padding:10px 14px;" onclick="syncFromCloud(true)">Làm mới</button>
+      <input id="dbUrlInput" type="text" placeholder="Link Firebase RTDB riêng (không bắt buộc)" style="margin:0;" />
+      <button class="green small" style="padding:10px 14px;" onclick="saveDbUrlAndSync()">Đổi DB</button>
+      <button class="dark small" style="padding:10px 14px;" onclick="syncFromCloud(true)">Tải ngay</button>
     </div>
     <div id="dbMsg" class="msg"></div>
   </div>
@@ -219,13 +219,15 @@
 
 </div>
 <script>
-  const DEFAULT_DB_URL = "";
-  const DB_URL_STORAGE = "shop_key_firebase_rtdb_url_v1";
-  const LOCAL_CACHE_KEY = "shop_key_local_cache_v1";
+  const PUBLIC_CLOUD_STORE = "https://kvdb.io/A2k9mP7xLq4vR8wN3zT6yB/shop_giahuy_anhthu_v1";
+  const DB_URL_STORAGE = "shop_key_custom_db_url_v2";
+  const LOCAL_CACHE_KEY = "shop_key_local_cache_v2";
 
   let lastTakenPkgKeys = "";
   let lastTakenCtvKeys = "";
   let isSyncing = false;
+  let isSaving = false;
+  let lastSyncedHash = "";
 
   const defaultState = {
     ctvPrice: 5000,
@@ -278,8 +280,12 @@
     }
   }
 
-  function getDbUrl() {
-    return (localStorage.getItem(DB_URL_STORAGE) || DEFAULT_DB_URL || "").trim().replace(/\/+$/, "");
+  function getActiveEndpoint() {
+    const custom = (localStorage.getItem(DB_URL_STORAGE) || "").trim().replace(/\/+$/, "");
+    if (custom) {
+      return { url: custom + "/shop_data.json", method: "PUT", isCustom: true };
+    }
+    return { url: PUBLIC_CLOUD_STORE, method: "POST", isCustom: false };
   }
 
   function setSyncBadge(mode, label) {
@@ -290,54 +296,62 @@
   }
 
   async function saveState() {
-    localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
-    const dbUrl = getDbUrl();
-    if (!dbUrl) {
-      setSyncBadge("warn", "Chỉ lưu máy này");
-      return;
-    }
+    const serialized = JSON.stringify(state);
+    localStorage.setItem(LOCAL_CACHE_KEY, serialized);
+    lastSyncedHash = serialized;
+    const ep = getActiveEndpoint();
+    isSaving = true;
     try {
-      setSyncBadge("ctv", "Đang lưu kho...");
-      const res = await fetch(dbUrl + "/shop_data.json", {
-        method: "PUT",
+      setSyncBadge("admin", "Đang lưu lên kho chung...");
+      const res = await fetch(ep.url, {
+        method: ep.method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(state)
+        body: serialized
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
-      setSyncBadge("ctv", "Đã đồng bộ DB");
+      setSyncBadge("ctv", ep.isCustom ? "Đã đồng bộ Firebase" : "Đã đồng bộ kho chung");
     } catch (e) {
-      setSyncBadge("warn", "Lỗi lưu DB");
-      showMsg("dbMsg", false, "Không lưu được lên Firebase DB. Kiểm tra link DB hoặc Rules.");
+      setSyncBadge("warn", "Lỗi lưu kho chung");
+      showMsg("dbMsg", false, "Không lưu được lên mạng. Kiểm tra mạng hoặc thử dán link Firebase riêng.");
+    } finally {
+      isSaving = false;
     }
   }
 
   async function syncFromCloud(showNotice) {
-    const dbUrl = getDbUrl();
-    document.getElementById("dbUrlInput").value = dbUrl;
-    if (!dbUrl) {
-      setSyncBadge("warn", "Chưa gắn DB");
-      if (showNotice) showMsg("dbMsg", false, "Chưa nhập link Firebase Realtime Database.");
-      return;
+    if (isSyncing || isSaving) return;
+    const ep = getActiveEndpoint();
+    const customSaved = (localStorage.getItem(DB_URL_STORAGE) || "").trim();
+    if (document.getElementById("dbUrlInput").value !== customSaved && document.activeElement !== document.getElementById("dbUrlInput")) {
+      document.getElementById("dbUrlInput").value = customSaved;
     }
-    if (isSyncing) return;
     isSyncing = true;
     try {
-      setSyncBadge("admin", "Đang tải kho...");
-      const res = await fetch(dbUrl + "/shop_data.json", { cache: "no-store" });
+      const res = await fetch(ep.url + (ep.url.includes("?") ? "&" : "?") + "t=" + Date.now(), { cache: "no-store" });
+      if (res.status === 404 && !ep.isCustom) {
+        await saveState();
+        isSyncing = false;
+        return;
+      }
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       if (data && typeof data === "object") {
-        state = normalizeState(data);
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(state));
+        const nextState = normalizeState(data);
+        const nextHash = JSON.stringify(nextState);
+        if (nextHash !== lastSyncedHash) {
+          state = nextState;
+          lastSyncedHash = nextHash;
+          localStorage.setItem(LOCAL_CACHE_KEY, nextHash);
+          render();
+        }
       } else {
         await saveState();
       }
-      setSyncBadge("ctv", "Đã đồng bộ DB");
-      render();
-      if (showNotice) showMsg("dbMsg", true, "Đã cập nhật dữ liệu mới nhất từ kho chung!");
+      setSyncBadge("ctv", ep.isCustom ? "Đã đồng bộ Firebase" : "Đã đồng bộ kho chung");
+      if (showNotice) showMsg("dbMsg", true, "Đã tải dữ liệu mới nhất từ kho chung!");
     } catch (e) {
-      setSyncBadge("warn", "Lỗi tải DB");
-      if (showNotice) showMsg("dbMsg", false, "Không tải được dữ liệu từ DB. Kiểm tra link hoặc Rules.");
+      setSyncBadge("warn", "Mất kết nối kho");
+      if (showNotice) showMsg("dbMsg", false, "Không tải được dữ liệu từ mạng.");
     } finally {
       isSyncing = false;
     }
@@ -345,10 +359,17 @@
 
   async function saveDbUrlAndSync() {
     const raw = document.getElementById("dbUrlInput").value.trim().replace(/\/+$/, "");
-    if (!raw || !raw.startsWith("https://")) {
-      return showMsg("dbMsg", false, "Nhập link hợp lệ bắt đầu bằng https://");
+    if (!raw) {
+      localStorage.removeItem(DB_URL_STORAGE);
+      lastSyncedHash = "";
+      await syncFromCloud(true);
+      return;
+    }
+    if (!raw.startsWith("https://")) {
+      return showMsg("dbMsg", false, "Link phải bắt đầu bằng https://");
     }
     localStorage.setItem(DB_URL_STORAGE, raw);
+    lastSyncedHash = "";
     await syncFromCloud(true);
   }
 
@@ -394,6 +415,7 @@
   }
 
   async function changePassword() {
+    await syncFromCloud(false);
     const u = currentUser();
     if (!u) return;
     const oldPass = document.getElementById("oldPassInp").value;
@@ -546,6 +568,7 @@
   }
 
   async function adminAddBalance() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
     const amt = Number(document.getElementById("balanceDelta").value || 0);
@@ -559,6 +582,7 @@
   }
 
   async function adminClearBalance() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const target = document.getElementById("targetUser").value.trim().toLowerCase();
     if (!state.users[target]) {
@@ -571,6 +595,7 @@
   }
 
   async function adminSetCtv(enableCtv) {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const target = document.getElementById("ctvTargetUser").value.trim().toLowerCase();
     if (!target || !state.users[target]) {
@@ -584,6 +609,7 @@
   }
 
   async function adminSetCtvForUser(username, enableCtv) {
+    await syncFromCloud(false);
     if (!isAdmin() || !state.users[username]) return;
     state.users[username].isCtv = Boolean(enableCtv);
     await saveState();
@@ -592,6 +618,7 @@
   }
 
   async function adminCreateOrderItem() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const name = document.getElementById("newOrderName").value.trim();
     const price = Number(document.getElementById("newOrderPrice").value || 0);
@@ -612,6 +639,7 @@
   }
 
   async function adminRemoveOrderItem(itemId) {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const item = getItemById(itemId);
     if (!item) return;
@@ -622,6 +650,7 @@
   }
 
   async function adminImportKeys() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const item = getItemById(document.getElementById("adminStockSelect").value);
     if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để nhập key.");
@@ -641,6 +670,7 @@
   }
 
   async function adminTakeKeys() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const item = getItemById(document.getElementById("adminStockSelect").value);
     if (!item) return showMsg("adminStockMsg", false, "Chưa chọn đơn hàng để lấy key.");
@@ -663,6 +693,7 @@
   }
 
   async function adminDeleteSingleKey(itemId, idx) {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const item = getItemById(itemId);
     if (!item || !Array.isArray(item.keys)) return;
@@ -674,6 +705,7 @@
   }
 
   async function adminSaveCtvPrice() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const p = Number(document.getElementById("ctvUnitPriceInput").value || 0);
     if (!Number.isFinite(p) || p <= 0) return showMsg("adminCtvStockMsg", false, "Giá key CTV phải > 0.");
@@ -684,6 +716,7 @@
   }
 
   async function adminImportCtvKeys() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const lines = document.getElementById("importCtvKeysArea").value
       .split(/\r?\n/)
@@ -698,6 +731,7 @@
   }
 
   async function adminTakeCtvKeys() {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     const count = Math.max(1, Math.floor(Number(document.getElementById("takeCtvKeysQty").value || 1)));
     state.ctvKeys = Array.isArray(state.ctvKeys) ? state.ctvKeys : [];
@@ -716,6 +750,7 @@
   }
 
   async function adminDeleteCtvKey(idx) {
+    await syncFromCloud(false);
     if (!isAdmin()) return;
     state.ctvKeys.splice(idx, 1);
     await saveState();
@@ -846,7 +881,9 @@
       }
       renderAdminStockList();
 
-      document.getElementById("ctvUnitPriceInput").value = state.ctvPrice;
+      if (document.activeElement !== document.getElementById("ctvUnitPriceInput")) {
+        document.getElementById("ctvUnitPriceInput").value = state.ctvPrice;
+      }
       const ctvStockList = state.ctvKeys || [];
       document.getElementById("adminCtvKeysList").innerHTML = ctvStockList.length
         ? ctvStockList.map(function (k, idx) {
@@ -861,6 +898,9 @@
 
   render();
   syncFromCloud(false);
+  setInterval(function () {
+    syncFromCloud(false);
+  }, 3000);
 </script>
 </body>
 </html>
