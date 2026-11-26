@@ -50,6 +50,7 @@
 </head>
 <body>
 <div class="wrap">
+
   <div class="card topbar">
     <div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -68,7 +69,6 @@
       <button id="btnLogout" class="dark small" style="display:none;" onclick="logout()">Đăng xuất</button>
     </div>
   </div>
-
   <div id="changePassBox" class="card" style="display:none; border-color:#38bdf8;">
     <h2 style="margin-bottom:8px; color:#38bdf8;">Đổi Mật Khẩu Tài Khoản</h2>
     <input id="oldPassInp" type="password" placeholder="Nhập mật khẩu hiện tại..." />
@@ -204,9 +204,10 @@
 
 </div>
 <script>
-  const FIREBASE_RTDB_URL = "";
+  const FIREBASE_RTDB_URL = "https://adghat-fc9be-default-rtdb.firebaseio.com";
   const ROOM_ID = "webkeyy1_shop_shared_v3";
   const LOCAL_CACHE_KEY = "shop_key_local_cache_v3";
+  const SESSION_USER_KEY = "shop_key_session_user";
 
   let lastTakenPkgKeys = "";
   let lastTakenCtvKeys = "";
@@ -279,7 +280,7 @@
     };
   }
 
-  let currentSessionUser = sessionStorage.getItem("shop_key_session_user") || null;
+  let currentSessionUser = localStorage.getItem(SESSION_USER_KEY) || null;
   let state = loadLocalCache();
 
   function loadLocalCache() {
@@ -509,7 +510,7 @@
     const grantAdmin = name === "admingiahuy" || name === "adminanhthu";
     state.users[name] = { username: name, password: pass, balance: 0, isAdmin: grantAdmin, isCtv: grantAdmin };
     currentSessionUser = name;
-    sessionStorage.setItem("shop_key_session_user", name);
+    localStorage.setItem(SESSION_USER_KEY, name);
     await saveState();
     document.getElementById("authBox").style.display = "none";
     render();
@@ -522,14 +523,14 @@
     const u = state.users[name];
     if (!u || u.password !== pass) return showMsg("authMsg", false, "Sai tên tài khoản hoặc mật khẩu.");
     currentSessionUser = name;
-    sessionStorage.setItem("shop_key_session_user", name);
+    localStorage.setItem(SESSION_USER_KEY, name);
     document.getElementById("authBox").style.display = "none";
     render();
   }
 
   function logout() {
     currentSessionUser = null;
-    sessionStorage.removeItem("shop_key_session_user");
+    localStorage.removeItem(SESSION_USER_KEY);
     document.getElementById("changePassBox").style.display = "none";
     render();
   }
